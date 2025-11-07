@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 bg-light p-3" style="min-height: 90vh;">
+            <h5 class="fw-bold mb-4">
+                <i class="bi bi-speedometer2"></i> Admin Panel
+            </h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_configuracion') }}">
+                        <i class="bi bi-gear"></i> Configuración
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_productos') }}">
+                        <i class="bi bi-box"></i> Productos
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners') }}">
+                        <i class="bi bi-images"></i> Banners
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners_intermedios') }}">
+                        <i class="bi bi-grid-3x2-gap"></i> Banners Intermedios
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_categorias') }}">
+                        <i class="bi bi-folder"></i> Categorías
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_galeria') }}">
+                        <i class="bi bi-card-image"></i> Galería
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link active" href="{{ url_for('admin_ordenes') }}">
+                        <i class="bi bi-bag"></i> Órdenes
+                    </a>
+                </li>
+                <hr>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">
+                        <i class="bi bi-arrow-left"></i> Volver al Sitio
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10">
+            <h2 class="fw-bold mb-4">Gestión de Órdenes</h2>
+
+            <!-- Lista de Órdenes -->
+            {% if ordenes %}
+            
+            <!-- Vista de Tabla (Desktop) -->
+            <div class="card d-none d-md-block">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Usuario</th>
+                                    <th>Producto</th>
+                                    <th>Paquete</th>
+                                    <th>Precio</th>
+                                    <th>Player ID</th>
+                                    <th>Zone ID</th>
+                                    <th>Método</th>
+                                    <th>Referencia</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for orden in ordenes %}
+                                <tr>
+                                    <td>#{{ orden.id }}</td>
+                                    <td>{{ orden.usuario_nombre if orden.usuario_nombre else orden.nombre }}</td>
+                                    <td>{{ orden.producto_nombre }}</td>
+                                    <td>{{ orden.paquete_nombre }}</td>
+                                    <td>${{ orden.precio }}</td>
+                                    <td><code>{{ orden.player_id if orden.player_id else 'N/A' }}</code></td>
+                                    <td><code>{{ orden.zone_id if orden.zone_id else '-' }}</code></td>
+                                    <td class="text-capitalize">{{ orden.metodo_pago }}</td>
+                                    <td><code>{{ orden.referencia }}</code></td>
+                                    <td>
+                                        {% if orden.estado == 'pendiente' %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                        {% elif orden.estado == 'completado' %}
+                                        <span class="badge bg-success">Completado</span>
+                                        {% elif orden.estado == 'cancelado' %}
+                                        <span class="badge bg-danger">Cancelado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ orden.fecha }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if orden.estado == 'pendiente' %}
+                                            <a href="{{ url_for('admin_ordenes_cambiar_estado', id=orden.id, estado='completado') }}" 
+                                               class="btn btn-success" title="Marcar como completado">
+                                                <i class="bi bi-check"></i>
+                                            </a>
+                                            <a href="{{ url_for('admin_ordenes_cambiar_estado', id=orden.id, estado='cancelado') }}" 
+                                               class="btn btn-danger" title="Cancelar">
+                                                <i class="bi bi-x"></i>
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vista de Tarjetas (Móvil) -->
+            <div class="d-md-none">
+                {% for orden in ordenes %}
+                <div class="card mb-3 orden-card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h6 class="mb-0 fw-bold">#{{ orden.id }}</h6>
+                            {% if orden.estado == 'pendiente' %}
+                            <span class="badge bg-warning">Pendiente</span>
+                            {% elif orden.estado == 'completado' %}
+                            <span class="badge bg-success">Completado</span>
+                            {% elif orden.estado == 'cancelado' %}
+                            <span class="badge bg-danger">Cancelado</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="orden-info mb-3">
+                            <div class="info-row">
+                                <span class="info-label">Cliente:</span>
+                                <span class="info-value">{{ orden.usuario_nombre if orden.usuario_nombre else orden.nombre }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Producto:</span>
+                                <span class="info-value">{{ orden.producto_nombre }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Paquete:</span>
+                                <span class="info-value">{{ orden.paquete_nombre }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Precio:</span>
+                                <span class="info-value fw-bold" style="color: var(--primary-color);">${{ orden.precio }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Método:</span>
+                                <span class="info-value text-capitalize">{{ orden.metodo_pago }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Player ID:</span>
+                                <span class="info-value"><code>{{ orden.player_id if orden.player_id else 'N/A' }}</code></span>
+                            </div>
+                            {% if orden.zone_id %}
+                            <div class="info-row">
+                                <span class="info-label">Zone ID:</span>
+                                <span class="info-value"><code>{{ orden.zone_id }}</code></span>
+                            </div>
+                            {% endif %}
+                            <div class="info-row">
+                                <span class="info-label">Correo:</span>
+                                <span class="info-value">{{ orden.correo }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Referencia:</span>
+                                <span class="info-value"><code>{{ orden.referencia }}</code></span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Fecha:</span>
+                                <span class="info-value">{{ orden.fecha }}</span>
+                            </div>
+                        </div>
+                        
+                        {% if orden.estado == 'pendiente' %}
+                        <div class="orden-actions">
+                            <a href="{{ url_for('admin_ordenes_cambiar_estado', id=orden.id, estado='completado') }}" 
+                               class="btn btn-success w-100 mb-2">
+                                <i class="bi bi-check-circle"></i> Aceptar Orden
+                            </a>
+                            <a href="{{ url_for('admin_ordenes_cambiar_estado', id=orden.id, estado='cancelado') }}" 
+                               class="btn btn-danger w-100">
+                                <i class="bi bi-x-circle"></i> Rechazar Orden
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% else %}
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem;"></i>
+                        <p class="mt-3">No hay órdenes registradas</p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para tarjetas de órdenes en móvil */
+.orden-card {
+    border: 1px solid rgba(100, 100, 100, 0.3);
+    background-color: rgba(26, 26, 26, 0.9);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.orden-card .card-body {
+    padding: 1rem;
+}
+
+.orden-info {
+    border-top: 1px solid rgba(100, 100, 100, 0.2);
+    border-bottom: 1px solid rgba(100, 100, 100, 0.2);
+    padding: 0.75rem 0;
+    margin: 0.75rem 0;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: start;
+    padding: 0.4rem 0;
+    gap: 1rem;
+}
+
+.info-label {
+    font-size: 0.85rem;
+    color: #999;
+    font-weight: 500;
+    flex-shrink: 0;
+    min-width: 80px;
+}
+
+.info-value {
+    font-size: 0.9rem;
+    color: #fff;
+    text-align: right;
+    word-break: break-word;
+}
+
+.info-value code {
+    background-color: rgba(60, 60, 60, 0.8);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: #4CAF50;
+}
+
+.orden-actions {
+    margin-top: 1rem;
+}
+
+.orden-actions .btn {
+    font-size: 0.95rem;
+    padding: 0.75rem;
+    font-weight: 600;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+.orden-actions .btn-success {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.orden-actions .btn-success:hover {
+    background-color: #218838;
+    border-color: #1e7e34;
+}
+
+.orden-actions .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.orden-actions .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+}
+
+.orden-card h6 {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+}
+
+.orden-card .badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+}
+
+/* Desktop: ocultar vista de tarjetas */
+@media (min-width: 769px) {
+    .d-md-none {
+        display: none !important;
+    }
+}
+</style>
+{% endblock %}

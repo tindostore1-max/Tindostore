@@ -1,0 +1,358 @@
+{% extends "admin/dashboard.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 bg-light p-3" style="min-height: 90vh;">
+            <h5 class="fw-bold mb-4">
+                <i class="bi bi-speedometer2"></i> Admin Panel
+            </h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link active" href="{{ url_for('admin_configuracion') }}">
+                        <i class="bi bi-gear"></i> Configuración
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_productos') }}">
+                        <i class="bi bi-box"></i> Productos
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners') }}">
+                        <i class="bi bi-images"></i> Banners
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners_intermedios') }}">
+                        <i class="bi bi-grid-3x2-gap"></i> Banners Intermedios
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_categorias') }}">
+                        <i class="bi bi-folder"></i> Categorías
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_galeria') }}">
+                        <i class="bi bi-card-image"></i> Galería
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_ordenes') }}">
+                        <i class="bi bi-bag"></i> Órdenes
+                    </a>
+                </li>
+                <hr>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">
+                        <i class="bi bi-arrow-left"></i> Volver al Sitio
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10">
+            <h2 class="fw-bold mb-4">Configuración del Sitio</h2>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="{{ url_for('admin_configuracion') }}" method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre del Sitio</label>
+                            <input type="text" class="form-control" name="nombre_sitio" 
+                                   value="{{ config.nombre_sitio if config else '' }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Logo</label>
+                            {% if config and config.logo %}
+                            <div class="mb-3">
+                                <img src="{{ url_for('static', filename=config.logo) }}" alt="Logo actual" style="max-height: 100px;" class="border rounded p-2">
+                            </div>
+                            {% endif %}
+                            <input type="hidden" id="imagen_ruta_logo" name="logo_ruta">
+                            <button type="button" class="btn btn-info w-100" onclick="abrirGaleriaModal('logo')">
+                                <i class="bi bi-images"></i> Elegir de Galería
+                            </button>
+                            <small class="form-text text-muted d-block mt-2">Elige un logo desde la galería (PNG recomendado)</small>
+                            <div id="preview_logo" class="mt-2"></div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-currency-exchange"></i> Tasa de Cambio</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tasa de Cambio (1 USD = X Bs)</label>
+                                    <input type="number" step="0.01" class="form-control" name="tasa_cambio" 
+                                           value="{{ config.tasa_cambio if config else '36.5' }}" required>
+                                    <small class="form-text text-muted">Los precios se mostrarán en USD y Bs según esta tasa</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-phone"></i> Datos de Pago Móvil</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Imagen de Pago Móvil (Opcional)</label>
+                            <input type="hidden" id="imagen_ruta_pagomovil" name="pagomovil_imagen">
+                            <button type="button" class="btn btn-info w-100" onclick="abrirGaleriaModal('pagomovil')">
+                                <i class="bi bi-images"></i> Elegir de Galería
+                            </button>
+                            <small class="form-text text-muted d-block mt-2">Si agregas imagen, se mostrará en lugar del título</small>
+                            <div id="preview_pagomovil" class="mt-2">
+                                {% if config and config.pagomovil_imagen %}
+                                <div class="alert alert-info d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename=config.pagomovil_imagen) }}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                                    <small>Imagen actual</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Banco</label>
+                                    <input type="text" class="form-control" name="pagomovil_banco" 
+                                           value="{{ config.pagomovil_banco if config else '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="text" class="form-control" name="pagomovil_telefono" 
+                                           value="{{ config.pagomovil_telefono if config else '' }}" placeholder="0424-0000000">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Cédula</label>
+                                    <input type="text" class="form-control" name="pagomovil_cedula" 
+                                           value="{{ config.pagomovil_cedula if config else '' }}" placeholder="V-00000000">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Titular</label>
+                                    <input type="text" class="form-control" name="pagomovil_titular" 
+                                           value="{{ config.pagomovil_titular if config else '' }}">
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+                        <h5 class="fw-bold mb-3"><i class="bi bi-currency-bitcoin"></i> Datos de Binance / Binance Pay</h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Imagen de Binance (Opcional)</label>
+                            <input type="hidden" id="imagen_ruta_binance" name="binance_imagen">
+                            <button type="button" class="btn btn-info w-100" onclick="abrirGaleriaModal('binance')">
+                                <i class="bi bi-images"></i> Elegir de Galería
+                            </button>
+                            <small class="form-text text-muted d-block mt-2">Si agregas imagen, se mostrará en lugar del título</small>
+                            <div id="preview_binance" class="mt-2">
+                                {% if config and config.binance_imagen %}
+                                <div class="alert alert-info d-flex align-items-center">
+                                    <img src="{{ url_for('static', filename=config.binance_imagen) }}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                                    <small>Imagen actual</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Correo Electrónico</label>
+                                    <input type="email" class="form-control" name="binance_correo" 
+                                           value="{{ config.binance_correo if config else '' }}" placeholder="ejemplo@correo.com">
+                                    <small class="form-text text-muted">Tu correo de Binance</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Binance Pay ID (Opcional)</label>
+                                    <input type="text" class="form-control" name="binance_pay_id" 
+                                           value="{{ config.binance_pay_id if config else '' }}" placeholder="12345678">
+                                    <small class="form-text text-muted">Tu ID de Binance Pay</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-save"></i> Guardar Configuración
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Galería de Imágenes -->
+<div class="modal fade" id="galeriaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Seleccionar Imagen de la Galería</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="galeria-contenido" class="row g-3">
+                    <div class="text-center py-5">
+                        <div class="spinner-border" role="status"></div>
+                        <p class="mt-2">Cargando imágenes...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('admin_galeria') }}" class="btn btn-link" target="_blank">
+                    <i class="bi bi-plus-circle"></i> Subir nueva imagen
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarSeleccion()">
+                    <i class="bi bi-check-circle"></i> Seleccionar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTargetField = '';
+
+function abrirGaleriaModal(targetField) {
+    currentTargetField = targetField;
+    const modal = new bootstrap.Modal(document.getElementById('galeriaModal'));
+    modal.show();
+    
+    // Cargar imágenes de la galería
+    fetch('{{ url_for("admin_galeria_listar") }}')
+        .then(response => response.json())
+        .then(data => {
+            const contenido = document.getElementById('galeria-contenido');
+            
+            if (data.length === 0) {
+                contenido.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-images" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="text-muted mt-3">No hay imágenes en la galería</p>
+                        <a href="{{ url_for('admin_galeria') }}" class="btn btn-primary" target="_blank">
+                            <i class="bi bi-cloud-upload"></i> Subir Imagen
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+            
+            contenido.innerHTML = data.map(img => `
+                <div class="col-md-3">
+                    <div class="card h-100 imagen-galeria-card" style="cursor: pointer; position: relative;" onclick="toggleImageSelection('${img.ruta}', '${img.nombre}', event)">
+                        <div class="form-check position-absolute top-0 end-0 m-2">
+                            <input class="form-check-input imagen-checkbox" type="checkbox" value="${img.ruta}" data-nombre="${img.nombre}" id="img_${img.id}">
+                        </div>
+                        <img src="/static/${img.ruta}" class="card-img-top" alt="${img.nombre}" style="height: 150px; object-fit: cover;">
+                        <div class="card-body p-2">
+                            <p class="card-text small text-truncate mb-0" title="${img.nombre}">${img.nombre}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('galeria-contenido').innerHTML = `
+                <div class="col-12 text-center text-danger py-5">
+                    <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                    <p class="mt-3">Error al cargar las imágenes</p>
+                </div>
+            `;
+        });
+}
+
+function toggleImageSelection(ruta, nombre, event) {
+    if (event.target.classList.contains('form-check-input')) {
+        return;
+    }
+    const checkbox = event.currentTarget.querySelector('.imagen-checkbox');
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+    }
+}
+
+function confirmarSeleccion() {
+    const checkboxes = document.querySelectorAll('.imagen-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Por favor selecciona al menos una imagen');
+        return;
+    }
+    
+    const primeraImagen = checkboxes[0];
+    const ruta = primeraImagen.value;
+    const nombre = primeraImagen.dataset.nombre;
+    
+    const rutaField = document.getElementById('imagen_ruta_' + currentTargetField);
+    if (rutaField) {
+        rutaField.value = ruta;
+    }
+    
+    const preview = document.getElementById('preview_' + currentTargetField);
+    if (preview) {
+        if (checkboxes.length === 1) {
+            preview.innerHTML = `
+                <div class="alert alert-success d-flex align-items-center">
+                    <img src="/static/${ruta}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                    <div>
+                        <strong>Imagen seleccionada:</strong><br>
+                        <small>${nombre}</small>
+                    </div>
+                </div>
+            `;
+        } else {
+            preview.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>${checkboxes.length} imágenes seleccionadas</strong><br>
+                    <small>Se usará: ${nombre}</small>
+                </div>
+            `;
+        }
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('galeriaModal'));
+    modal.hide();
+}
+</script>
+
+<style>
+.imagen-galeria-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+    transition: all 0.3s;
+}
+
+.imagen-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.imagen-galeria-card:has(.imagen-checkbox:checked) {
+    border: 3px solid var(--bs-primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+</style>
+{% endblock %}

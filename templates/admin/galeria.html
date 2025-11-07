@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 bg-light p-3" style="min-height: 90vh;">
+            <h5 class="fw-bold mb-4">
+                <i class="bi bi-speedometer2"></i> Admin Panel
+            </h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_configuracion') }}">
+                        <i class="bi bi-gear"></i> Configuración
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_productos') }}">
+                        <i class="bi bi-box"></i> Productos
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners') }}">
+                        <i class="bi bi-images"></i> Banners
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners_intermedios') }}">
+                        <i class="bi bi-grid-3x2-gap"></i> Banners Intermedios
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_categorias') }}">
+                        <i class="bi bi-folder"></i> Categorías
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link active" href="{{ url_for('admin_galeria') }}">
+                        <i class="bi bi-card-image"></i> Galería
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_ordenes') }}">
+                        <i class="bi bi-bag"></i> Órdenes
+                    </a>
+                </li>
+                <hr>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">
+                        <i class="bi bi-arrow-left"></i> Volver al Sitio
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="fw-bold">Galería de Imágenes</h2>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#subirImagenModal">
+                    <i class="bi bi-cloud-upload"></i> Subir Imagen
+                </button>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> 
+                <strong>Información:</strong> Sube imágenes a la galería y luego podrás seleccionarlas al crear productos, banners y paquetes usando el botón "Elegir Imagen".
+            </div>
+
+            <!-- Galería de Imágenes -->
+            {% if imagenes %}
+            <div class="row g-3">
+                {% for imagen in imagenes %}
+                <div class="col-md-3">
+                    <div class="card h-100">
+                        <img src="{{ url_for('static', filename=imagen.ruta) }}" 
+                             class="card-img-top" 
+                             alt="{{ imagen.nombre }}" 
+                             style="height: 200px; object-fit: cover;">
+                        <div class="card-body">
+                            <h6 class="card-title text-truncate" title="{{ imagen.nombre }}">{{ imagen.nombre }}</h6>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-tag"></i> {{ imagen.tipo }}
+                            </p>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-calendar"></i> {{ imagen.fecha_subida }}
+                            </p>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-info flex-grow-1" onclick="copiarRuta('{{ imagen.ruta }}')">
+                                    <i class="bi bi-clipboard"></i> Copiar
+                                </button>
+                                <a href="{{ url_for('admin_galeria_eliminar', id=imagen.id) }}" 
+                                   class="btn btn-sm btn-danger" 
+                                   onclick="return confirm('¿Eliminar esta imagen?')">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-images" style="font-size: 4rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">No hay imágenes en la galería. ¡Sube tu primera imagen!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal Subir Imagen -->
+<div class="modal fade" id="subirImagenModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Subir Imagen a la Galería</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin_galeria_subir') }}" method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Prefijo de Nombre (opcional)</label>
+                        <input type="text" class="form-control" name="nombre_prefijo" placeholder="Ej: Producto">
+                        <small class="form-text text-muted">Se agregará al nombre de cada archivo. Dejar vacío para usar nombre original</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" name="tipo">
+                            <option value="general">General</option>
+                            <option value="producto">Producto</option>
+                            <option value="banner">Banner</option>
+                            <option value="logo">Logo</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar Imágenes</label>
+                        <input type="file" class="form-control" name="imagenes" accept="image/*" multiple required id="file-input">
+                        <small class="form-text text-muted">Puedes seleccionar múltiples imágenes. Formatos: JPG, PNG, GIF</small>
+                        <div id="files-preview" class="mt-2"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-cloud-upload"></i> Subir
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Preview de archivos seleccionados
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file-input');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const files = e.target.files;
+            const preview = document.getElementById('files-preview');
+            preview.innerHTML = '';
+            
+            if (files.length > 0) {
+                preview.innerHTML = `<div class="alert alert-info"><strong>${files.length}</strong> archivo(s) seleccionado(s):</div>`;
+                const list = document.createElement('ul');
+                list.className = 'list-group';
+                
+                Array.from(files).forEach(file => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    li.textContent = file.name;
+                    const badge = document.createElement('span');
+                    badge.className = 'badge bg-primary';
+                    badge.textContent = (file.size / 1024).toFixed(2) + ' KB';
+                    li.appendChild(badge);
+                    list.appendChild(li);
+                });
+                
+                preview.appendChild(list);
+            }
+        });
+    }
+});
+
+function copiarRuta(ruta) {
+    navigator.clipboard.writeText(ruta).then(() => {
+        alert('Ruta copiada al portapapeles: ' + ruta);
+    });
+}
+</script>
+{% endblock %}

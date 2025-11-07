@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Panel Admin - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 bg-light p-3" style="min-height: 90vh;">
+            <h5 class="fw-bold mb-4">
+                <i class="bi bi-speedometer2"></i> Admin Panel
+            </h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link active" href="{{ url_for('admin_dashboard') }}">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_configuracion') }}">
+                        <i class="bi bi-gear"></i> Configuración
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_productos') }}">
+                        <i class="bi bi-box"></i> Productos
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners') }}">
+                        <i class="bi bi-images"></i> Banners
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners_intermedios') }}">
+                        <i class="bi bi-grid-3x2-gap"></i> Banners Intermedios
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_categorias') }}">
+                        <i class="bi bi-folder"></i> Categorías
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_galeria') }}">
+                        <i class="bi bi-card-image"></i> Galería
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_ordenes') }}">
+                        <i class="bi bi-bag"></i> Órdenes
+                    </a>
+                </li>
+                <hr>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">
+                        <i class="bi bi-arrow-left"></i> Volver al Sitio
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10">
+            <h2 class="fw-bold mb-4">Dashboard</h2>
+
+            <!-- Estadísticas -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card text-white bg-primary">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50">Total Productos</h6>
+                                    <h2 class="mb-0">{{ total_productos }}</h2>
+                                </div>
+                                <i class="bi bi-box" style="font-size: 3rem; opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-white bg-success">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50">Total Órdenes</h6>
+                                    <h2 class="mb-0">{{ total_ordenes }}</h2>
+                                </div>
+                                <i class="bi bi-bag" style="font-size: 3rem; opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card text-white bg-warning">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="text-white-50">Órdenes Pendientes</h6>
+                                    <h2 class="mb-0">{{ ordenes_pendientes }}</h2>
+                                </div>
+                                <i class="bi bi-clock" style="font-size: 3rem; opacity: 0.3;"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Órdenes Recientes -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Órdenes Recientes</h5>
+                </div>
+                <div class="card-body">
+                    {% if ordenes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Producto</th>
+                                    <th>Paquete</th>
+                                    <th>Cliente</th>
+                                    <th>Precio</th>
+                                    <th>Estado</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for orden in ordenes %}
+                                <tr>
+                                    <td>#{{ orden.id }}</td>
+                                    <td>{{ orden.producto_nombre }}</td>
+                                    <td>{{ orden.paquete_nombre }}</td>
+                                    <td>{{ orden.nombre }}</td>
+                                    <td>${{ orden.precio }}</td>
+                                    <td>
+                                        {% if orden.estado == 'pendiente' %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                        {% elif orden.estado == 'completado' %}
+                                        <span class="badge bg-success">Completado</span>
+                                        {% elif orden.estado == 'cancelado' %}
+                                        <span class="badge bg-danger">Cancelado</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ orden.fecha }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No hay órdenes aún</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

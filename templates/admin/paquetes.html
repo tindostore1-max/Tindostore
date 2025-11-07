@@ -1,0 +1,381 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-2 bg-light p-3" style="min-height: 90vh;">
+            <h5 class="fw-bold mb-4">
+                <i class="bi bi-speedometer2"></i> Admin Panel
+            </h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                        <i class="bi bi-house"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_configuracion') }}">
+                        <i class="bi bi-gear"></i> Configuración
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link active" href="{{ url_for('admin_productos') }}">
+                        <i class="bi bi-box"></i> Productos
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners') }}">
+                        <i class="bi bi-images"></i> Banners
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_banners_intermedios') }}">
+                        <i class="bi bi-grid-3x2-gap"></i> Banners Intermedios
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_categorias') }}">
+                        <i class="bi bi-folder"></i> Categorías
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_galeria') }}">
+                        <i class="bi bi-card-image"></i> Galería
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link" href="{{ url_for('admin_ordenes') }}">
+                        <i class="bi bi-bag"></i> Órdenes
+                    </a>
+                </li>
+                <hr>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('index') }}">
+                        <i class="bi bi-arrow-left"></i> Volver al Sitio
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-10">
+            <div class="mb-3">
+                <a href="{{ url_for('admin_productos') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Productos
+                </a>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold">Paquetes de {{ producto.nombre }}</h2>
+                    <p class="text-muted">Gestiona los paquetes y precios de este producto</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#crearPaqueteModal">
+                    <i class="bi bi-plus-circle"></i> Nuevo Paquete
+                </button>
+            </div>
+
+            <!-- Lista de Paquetes -->
+            <div class="row">
+                {% for paquete in paquetes %}
+                <div class="col-md-4 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ paquete.nombre }}</h5>
+                                {% if paquete.zone_id_required %}
+                                <span class="badge bg-info" title="Requiere Zone ID">
+                                    <i class="bi bi-key"></i> Zone ID
+                                </span>
+                                {% endif %}
+                            </div>
+                            <p class="card-text text-muted">{{ paquete.descripcion }}</p>
+                            <h4 class="price-tag">${{ paquete.precio }}</h4>
+                            <div class="d-flex gap-2 mt-3">
+                                <button class="btn btn-sm btn-warning" onclick="editarPaquete({{ paquete.id }})">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </button>
+                                <a href="{{ url_for('admin_paquetes_eliminar', id=paquete.id, producto_id=producto.id) }}" 
+                                   class="btn btn-sm btn-danger" 
+                                   onclick="return confirm('¿Eliminar este paquete?')">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear Paquete -->
+<div class="modal fade" id="crearPaqueteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crear Paquete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('admin_paquetes_crear', producto_id=producto.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Paquete</label>
+                        <input type="text" class="form-control" name="nombre" placeholder="Ej: 100 Diamantes" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="2" placeholder="Descripción del paquete"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Precio (USD)</label>
+                        <input type="number" step="0.01" class="form-control" name="precio" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="zone_id_required" id="zone_id_required" value="1">
+                            <label class="form-check-label" for="zone_id_required">
+                                <strong>Requiere Zone ID</strong>
+                                <small class="d-block text-muted">Marca esta opción si el paquete requiere Zone ID además del Player ID (ej: Mobile Legends)</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Imagen del Paquete (Opcional)</label>
+                        <input type="hidden" id="imagen_ruta_paquete" name="imagen_ruta">
+                        <button type="button" class="btn btn-info w-100" onclick="abrirGaleriaModal('paquete')">
+                            <i class="bi bi-images"></i> Elegir de Galería
+                        </button>
+                        <div id="preview_paquete" class="mt-2"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Crear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Paquete -->
+<div class="modal fade" id="editarPaqueteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Paquete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formEditarPaquete" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del Paquete</label>
+                        <input type="text" class="form-control" id="edit_paq_nombre" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="edit_paq_descripcion" name="descripcion" rows="2"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Precio (USD)</label>
+                        <input type="number" step="0.01" class="form-control" id="edit_paq_precio" name="precio" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="zone_id_required" id="edit_zone_id_required" value="1">
+                            <label class="form-check-label" for="edit_zone_id_required">
+                                <strong>Requiere Zone ID</strong>
+                                <small class="d-block text-muted">Marca esta opción si el paquete requiere Zone ID además del Player ID (ej: Mobile Legends)</small>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Imagen del Paquete (Opcional)</label>
+                        <input type="hidden" id="imagen_ruta_paquete_edit" name="imagen_ruta">
+                        <button type="button" class="btn btn-info w-100" onclick="abrirGaleriaModal('paquete_edit')">
+                            <i class="bi bi-images"></i> Elegir de Galería
+                        </button>
+                        <div id="preview_paquete_edit" class="mt-2"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Galería de Imágenes -->
+<div class="modal fade" id="galeriaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Seleccionar Imagen de la Galería</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="galeria-contenido" class="row g-3">
+                    <div class="text-center py-5">
+                        <div class="spinner-border" role="status"></div>
+                        <p class="mt-2">Cargando imágenes...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('admin_galeria') }}" class="btn btn-link" target="_blank">
+                    <i class="bi bi-plus-circle"></i> Subir nueva imagen
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="confirmarSeleccion()">
+                    <i class="bi bi-check-circle"></i> Seleccionar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentTargetField = '';
+
+function abrirGaleriaModal(targetField) {
+    currentTargetField = targetField;
+    const modal = new bootstrap.Modal(document.getElementById('galeriaModal'));
+    modal.show();
+    
+    fetch('{{ url_for("admin_galeria_listar") }}')
+        .then(response => response.json())
+        .then(data => {
+            const contenido = document.getElementById('galeria-contenido');
+            
+            if (data.length === 0) {
+                contenido.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-images" style="font-size: 3rem; color: #ccc;"></i>
+                        <p class="text-muted mt-3">No hay imágenes en la galería</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            contenido.innerHTML = data.map(img => `
+                <div class="col-md-3">
+                    <div class="card h-100 imagen-galeria-card" style="cursor: pointer; position: relative;" onclick="toggleImageSelection('${img.ruta}', '${img.nombre}', event)">
+                        <div class="form-check position-absolute top-0 end-0 m-2">
+                            <input class="form-check-input imagen-checkbox" type="checkbox" value="${img.ruta}" data-nombre="${img.nombre}" id="img_${img.id}">
+                        </div>
+                        <img src="/static/${img.ruta}" class="card-img-top" alt="${img.nombre}" style="height: 150px; object-fit: cover;">
+                        <div class="card-body p-2">
+                            <p class="card-text small text-truncate mb-0" title="${img.nombre}">${img.nombre}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        });
+}
+
+function toggleImageSelection(ruta, nombre, event) {
+    if (event.target.classList.contains('form-check-input')) {
+        return;
+    }
+    const checkbox = event.currentTarget.querySelector('.imagen-checkbox');
+    if (checkbox) {
+        checkbox.checked = !checkbox.checked;
+    }
+}
+
+function confirmarSeleccion() {
+    const checkboxes = document.querySelectorAll('.imagen-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Por favor selecciona al menos una imagen');
+        return;
+    }
+    
+    const primeraImagen = checkboxes[0];
+    const ruta = primeraImagen.value;
+    const nombre = primeraImagen.dataset.nombre;
+    
+    const rutaField = document.getElementById('imagen_ruta_' + currentTargetField);
+    if (rutaField) {
+        rutaField.value = ruta;
+    }
+    
+    const preview = document.getElementById('preview_' + currentTargetField);
+    if (preview) {
+        preview.innerHTML = `
+            <div class="alert alert-success d-flex align-items-center">
+                <img src="/static/${ruta}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                <div>
+                    <strong>Imagen seleccionada:</strong><br>
+                    <small>${nombre}</small>
+                </div>
+            </div>
+        `;
+    }
+    
+    const modal = bootstrap.Modal.getInstance(document.getElementById('galeriaModal'));
+    modal.hide();
+}
+
+function editarPaquete(id) {
+    // Obtener datos del paquete
+    fetch(`/admin/paquetes/${id}/datos`)
+        .then(response => response.json())
+        .then(paquete => {
+            // Rellenar el formulario
+            document.getElementById('edit_paq_nombre').value = paquete.nombre;
+            document.getElementById('edit_paq_descripcion').value = paquete.descripcion || '';
+            document.getElementById('edit_paq_precio').value = paquete.precio;
+            
+            // Establecer checkbox Zone ID Required
+            document.getElementById('edit_zone_id_required').checked = paquete.zone_id_required == 1;
+            
+            // Mostrar imagen actual si existe
+            if (paquete.imagen) {
+                document.getElementById('preview_paquete_edit').innerHTML = `
+                    <div class="alert alert-info d-flex align-items-center">
+                        <img src="/static/${paquete.imagen}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                        <small>Imagen actual</small>
+                    </div>
+                `;
+                document.getElementById('imagen_ruta_paquete_edit').value = paquete.imagen;
+            }
+            
+            // Configurar la acción del formulario
+            document.getElementById('formEditarPaquete').action = `/admin/paquetes/editar/${id}`;
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('editarPaqueteModal'));
+            modal.show();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al cargar el paquete');
+        });
+}
+</script>
+
+<style>
+.imagen-galeria-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+    transition: all 0.3s;
+}
+
+.imagen-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.imagen-galeria-card:has(.imagen-checkbox:checked) {
+    border: 3px solid var(--bs-primary);
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+}
+</style>
+{% endblock %}

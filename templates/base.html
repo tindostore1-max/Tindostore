@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ config.nombre_sitio if config else 'Tienda Online' }}{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #dc0000;
+            --secondary-color: #000000;
+            --bg-dark: #0a0a0a;
+            --bg-card: #1a1a1a;
+            --text-light: #ffffff;
+            --text-muted: #b0b0b0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark) !important;
+            color: var(--text-light) !important;
+        }
+        
+        .navbar {
+            box-shadow: 0 2px 4px rgba(0,0,0,.3);
+            padding: 1rem 0;
+            background-color: rgba(26, 26, 26, 0.85) !important;
+            backdrop-filter: blur(10px);
+        }
+        
+        .navbar-light .navbar-nav .nav-link {
+            color: var(--text-light) !important;
+        }
+        
+        .navbar-light .navbar-nav .nav-link:hover {
+            color: var(--primary-color) !important;
+        }
+        
+        .logo {
+            max-height: 50px;
+            width: auto;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #b00000;
+            border-color: #b00000;
+        }
+        
+        .card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #333;
+            box-shadow: 0 2px 8px rgba(220,0,0,.2);
+            background-color: var(--bg-card) !important;
+            color: var(--text-light) !important;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 16px rgba(220,0,0,.4);
+        }
+        
+        .card-title {
+            color: var(--text-light) !important;
+        }
+        
+        .card-text {
+            color: var(--text-muted) !important;
+        }
+        
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+        
+        .bg-white {
+            background-color: var(--bg-card) !important;
+        }
+        
+        .container {
+            background-color: transparent !important;
+        }
+        
+        .carousel-item img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        #bannersIntermediosCarousel .carousel-item img {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        /* Ocultar títulos del carrusel en PC */
+        .carousel-caption {
+            display: none !important;
+        }
+        
+        .carousel-item,
+        .carousel {
+            background-color: transparent !important;
+        }
+        
+        /* Banner principal con ancho del 100% */
+        #mainCarousel {
+            max-width: 100%;
+            margin-left: auto !important;
+            margin-right: auto !important;
+        }
+        
+        #mainCarousel .carousel-inner {
+            width: 100% !important;
+            margin: 0 auto !important;
+        }
+        
+        /* Todas las secciones dentro del container al 100% */
+        .container section {
+            max-width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* El carousel intermedio hereda el ancho de su section padre */
+        #bannersIntermediosCarousel {
+            width: 100%;
+        }
+        
+        #bannersIntermediosCarousel .carousel-inner {
+            width: 100%;
+        }
+        
+        #bannersIntermediosCarousel .carousel-item img {
+            width: 100%;
+            object-fit: cover;
+        }
+        
+        .product-card {
+            cursor: pointer;
+        }
+        
+        .product-card img {
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .product-card .card-title {
+            text-align: center;
+        }
+        
+        .product-card .card-body {
+            text-align: center;
+        }
+        
+        .price-tag {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        /* ===== ESTILOS TEMA OSCURO PARA ADMIN ===== */
+        
+        /* Sidebar del admin */
+        .col-md-2.bg-light {
+            background-color: var(--bg-dark) !important;
+            border-right: 1px solid #333;
+        }
+        
+        .col-md-2.bg-light h5,
+        .col-md-2.bg-light .nav-link {
+            color: var(--text-light) !important;
+        }
+        
+        .col-md-2.bg-light .nav-link:hover {
+            color: var(--primary-color) !important;
+            background-color: rgba(220, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        
+        .col-md-2.bg-light .nav-link.active {
+            color: var(--primary-color) !important;
+            background-color: rgba(220, 0, 0, 0.15);
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        
+        .col-md-2.bg-light hr {
+            border-color: #333 !important;
+            opacity: 1;
+        }
+        
+        /* Contenido del admin */
+        .container-fluid {
+            background-color: var(--bg-dark) !important;
+        }
+        
+        .container-fluid .card {
+            background-color: var(--bg-card) !important;
+            border: 1px solid #333;
+        }
+        
+        .container-fluid .card-header {
+            background-color: rgba(30, 30, 30, 0.8) !important;
+            border-bottom: 1px solid #333;
+            color: var(--text-light) !important;
+        }
+        
+        /* Tablas en admin */
+        .table-responsive {
+            background-color: transparent !important;
+        }
+        
+        .table {
+            color: var(--text-light) !important;
+            background-color: transparent !important;
+        }
+        
+        .table thead th {
+            background-color: rgba(30, 30, 30, 0.8) !important;
+            color: var(--text-light) !important;
+            border-color: #333 !important;
+        }
+        
+        .table tbody tr {
+            border-color: #333 !important;
+            background-color: var(--bg-card) !important;
+        }
+        
+        .table tbody td {
+            color: var(--text-light) !important;
+            border-color: #333 !important;
+            background-color: transparent !important;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(40, 40, 40, 0.8) !important;
+        }
+        
+        .table-hover tbody tr:hover td {
+            background-color: transparent !important;
+        }
+        
+        /* Forzar fondo oscuro en tablas */
+        table tbody tr {
+            background-color: var(--bg-card) !important;
+        }
+        
+        table tbody td {
+            background-color: transparent !important;
+        }
+        
+        /* Tarjetas de estadísticas del admin */
+        .bg-primary.card,
+        .bg-success.card,
+        .bg-warning.card {
+            border: none !important;
+        }
+        
+        .bg-primary {
+            background-color: rgba(220, 0, 0, 0.8) !important;
+        }
+        
+        .bg-success {
+            background-color: rgba(40, 167, 69, 0.8) !important;
+        }
+        
+        .bg-warning {
+            background-color: rgba(255, 193, 7, 0.8) !important;
+        }
+        
+        .bg-primary .card-body,
+        .bg-success .card-body,
+        .bg-warning .card-body {
+            background-color: transparent !important;
+        }
+        
+        /* Asegurar que todos los elementos blancos del admin sean oscuros */
+        .container-fluid .bg-white {
+            background-color: var(--bg-card) !important;
+        }
+        
+        /* Code tags en admin */
+        code {
+            background-color: rgba(60, 60, 60, 0.8) !important;
+            color: #4CAF50 !important;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+        }
+        
+        /* ===== ESTILOS PARA PERFIL DE USUARIO ===== */
+        
+        /* Aplicar tema oscuro a las tablas del perfil */
+        .container .table {
+            color: var(--text-light) !important;
+            background-color: transparent !important;
+        }
+        
+        .container .table thead th {
+            background-color: rgba(30, 30, 30, 0.8) !important;
+            color: var(--text-light) !important;
+            border-color: #333 !important;
+        }
+        
+        .container .table tbody tr {
+            border-color: #333 !important;
+            background-color: var(--bg-card) !important;
+        }
+        
+        .container .table tbody td {
+            color: var(--text-light) !important;
+            border-color: #333 !important;
+            background-color: transparent !important;
+        }
+        
+        .container .table-hover tbody tr:hover {
+            background-color: rgba(40, 40, 40, 0.8) !important;
+        }
+        
+        .container .table-hover tbody tr:hover td {
+            background-color: transparent !important;
+        }
+        
+        /* Forzar fondo oscuro en tablas del perfil */
+        .container table tbody tr {
+            background-color: var(--bg-card) !important;
+        }
+        
+        .container table tbody td {
+            background-color: transparent !important;
+        }
+        
+        /* ===== FORZAR TEMA OSCURO EN TODAS LAS TABLAS ===== */
+        
+        /* Sobrescribir cualquier fondo blanco de Bootstrap */
+        tbody tr,
+        tbody tr td,
+        .table > tbody > tr,
+        .table > tbody > tr > td {
+            background-color: var(--bg-card) !important;
+        }
+        
+        tbody tr td {
+            background-color: transparent !important;
+        }
+        
+        /* Asegurar que el contenedor de tabla no sea blanco */
+        .card .card-body,
+        .card-body {
+            background-color: var(--bg-card) !important;
+        }
+        
+        footer {
+            background-color: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(10px);
+            color: white;
+            margin-top: 5rem;
+        }
+        
+        .badge {
+            background-color: #dc0000 !important;
+            color: white !important;
+        }
+        
+        .badge.bg-success {
+            background-color: #dc0000 !important;
+        }
+        
+        h1, h2, h3, h4, h5, h6 {
+            color: var(--text-light) !important;
+        }
+        
+        .product-card .badge {
+            background-color: #dc0000 !important;
+        }
+        
+        /* Formularios en tema oscuro */
+        .form-control, .form-select, input[type="text"], input[type="email"], input[type="password"], textarea {
+            background-color: #1a1a1a !important;
+            color: #ffffff !important;
+            border: 1px solid #333 !important;
+        }
+        
+        .form-control:focus, .form-select:focus, input[type="text"]:focus, input[type="email"]:focus, input[type="password"]:focus, textarea:focus {
+            background-color: #2a2a2a !important;
+            color: #ffffff !important;
+            border-color: #dc0000 !important;
+            box-shadow: 0 0 0 0.2rem rgba(220, 0, 0, 0.25) !important;
+        }
+        
+        .form-label {
+            color: var(--text-light) !important;
+        }
+        
+        /* Placeholder text */
+        ::placeholder {
+            color: #888 !important;
+            opacity: 1;
+        }
+        
+        :-ms-input-placeholder {
+            color: #888 !important;
+        }
+        
+        ::-ms-input-placeholder {
+            color: #888 !important;
+        }
+        
+        .alert {
+            border: 1px solid #333;
+        }
+        
+        .alert-success {
+            background-color: #1a4d1a !important;
+            color: #90ee90 !important;
+            border-color: #28a745 !important;
+        }
+        
+        .alert-danger {
+            background-color: #4d1a1a !important;
+            color: #ff6b6b !important;
+            border-color: #dc0000 !important;
+        }
+        
+        .alert-warning {
+            background-color: #4d4d1a !important;
+            color: #ffeb3b !important;
+            border-color: #ffc107 !important;
+        }
+        
+        /* Estilos Responsivos para Móviles */
+        @media (max-width: 768px) {
+            /* Eliminar todo el espacio superior del body */
+            body {
+                padding-top: 0 !important;
+                margin-top: 0 !important;
+            }
+            
+            /* Navbar sin padding inferior */
+            .navbar {
+                padding-bottom: 0 !important;
+                margin-bottom: 0 !important;
+            }
+            
+            /* Container pegado al navbar */
+            .container {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            
+            /* Carrusel pegado */
+            #mainCarousel {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            
+            .carousel-inner,
+            .carousel-item {
+                margin-top: 0 !important;
+                padding-top: 0 !important;
+            }
+            
+            /* Carruseles más pequeños en móvil - imagen completa sin recortar */
+            .carousel-item img {
+                height: 150px !important;
+                object-fit: contain !important;
+                background-color: transparent;
+            }
+            
+            /* Eliminar espacios verticales del carrusel en móvil */
+            #mainCarousel,
+            #bannersIntermediosCarousel {
+                margin-top: 0 !important;
+                margin-bottom: 1rem !important;
+                padding: 0 !important;
+            }
+            
+            .carousel-item {
+                padding: 0 !important;
+                margin: 0 !important;
+                height: 150px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            
+            .carousel-inner {
+                padding: 0 !important;
+                margin: 0 !important;
+                height: 150px !important;
+            }
+            
+            
+            /* Ocultar indicadores del carrusel en móvil */
+            .carousel-indicators {
+                display: none !important;
+            }
+            
+            /* Tarjetas de productos: 2 por fila en móvil */
+            #productsScroll,
+            #giftcardsScroll {
+                display: grid !important;
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 0.75rem !important;
+                overflow-x: visible !important;
+            }
+            
+            .product-card {
+                min-width: auto !important;
+                max-width: none !important;
+                width: 100% !important;
+            }
+            
+            .product-card img {
+                height: 140px !important;
+            }
+            
+            .product-card .card-body {
+                padding: 0.75rem !important;
+            }
+            
+            .product-card .card-title {
+                font-size: 0.9rem !important;
+            }
+            
+            .product-card .card-text {
+                font-size: 0.75rem !important;
+            }
+            
+            /* Ocultar botones de scroll en móvil ya que usamos grid */
+            .d-flex.justify-content-between .btn-outline-primary {
+                display: none !important;
+            }
+            
+            /* Ajustar carrusel de banners intermedios */
+            #bannersIntermediosCarousel .carousel-item img {
+                height: 150px !important;
+                object-fit: contain !important;
+                background-color: transparent;
+            }
+            
+            /* Centrar títulos de tarjetas */
+            .product-card .card-title {
+                text-align: center !important;
+            }
+            
+            .product-card .card-body {
+                text-align: center !important;
+            }
+            
+            /* Categorías en 2 columnas en móvil */
+            .row.g-3 .col-md-3 {
+                flex: 0 0 50% !important;
+                max-width: 50% !important;
+            }
+            
+            /* Ajustar navbar */
+            .navbar {
+                padding: 0.5rem 0 !important;
+            }
+            
+            .logo {
+                max-height: 35px !important;
+            }
+            
+            /* Títulos más pequeños */
+            h2 {
+                font-size: 1.3rem !important;
+            }
+            
+            h5 {
+                font-size: 1rem !important;
+            }
+            
+            /* Títulos de carruseles ya ocultos en CSS general */
+            
+            /* Desactivar animación hover en móvil */
+            .card:hover {
+                transform: none !important;
+                box-shadow: 0 2px 8px rgba(0,0,0,.1) !important;
+            }
+            
+            .product-card:hover {
+                transform: none !important;
+            }
+            
+            .package-card:hover {
+                transform: none !important;
+            }
+            
+            /* ===== ESTILOS RESPONSIVE PARA PANEL ADMIN ===== */
+            
+            /* Sidebar colapsado en móvil */
+            .col-md-2.bg-light {
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 250px;
+                height: 100vh;
+                z-index: 9999;
+                transition: left 0.3s ease;
+                overflow-y: auto;
+                padding-top: 1rem !important;
+                background-color: var(--bg-dark) !important;
+            }
+            
+            .col-md-2.bg-light.show {
+                left: 0;
+            }
+            
+            /* Botón para mostrar sidebar en móvil */
+            .admin-sidebar-toggle {
+                position: fixed;
+                top: 70px;
+                left: 10px;
+                z-index: 1000;
+                background: var(--primary-color);
+                color: white;
+                border: none;
+                padding: 0.5rem 0.75rem;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
+            
+            /* Overlay cuando sidebar está abierto */
+            .admin-sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 9998;
+            }
+            
+            .admin-sidebar-overlay.show {
+                display: block;
+            }
+            
+            /* Contenido principal ocupa todo el ancho */
+            .col-md-10 {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0.75rem !important;
+            }
+            
+            /* Estadísticas en columna única */
+            .col-md-4 {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin-bottom: 0.75rem !important;
+            }
+            
+            /* Tarjetas de estadísticas más compactas */
+            .bg-primary .card-body,
+            .bg-success .card-body,
+            .bg-warning .card-body {
+                padding: 1rem !important;
+            }
+            
+            .bg-primary h6,
+            .bg-success h6,
+            .bg-warning h6 {
+                font-size: 0.85rem !important;
+            }
+            
+            .bg-primary h2,
+            .bg-success h2,
+            .bg-warning h2 {
+                font-size: 1.5rem !important;
+            }
+            
+            .bg-primary i,
+            .bg-success i,
+            .bg-warning i {
+                font-size: 2rem !important;
+            }
+            
+            /* Tablas más pequeñas */
+            .table {
+                font-size: 0.75rem !important;
+            }
+            
+            .table th,
+            .table td {
+                padding: 0.5rem 0.25rem !important;
+            }
+            
+            /* Botones más pequeños */
+            .btn-sm {
+                font-size: 0.75rem !important;
+                padding: 0.25rem 0.5rem !important;
+            }
+            
+            /* Forms más compactos */
+            .form-control,
+            .form-select {
+                font-size: 0.85rem !important;
+                padding: 0.5rem !important;
+            }
+            
+            .form-label {
+                font-size: 0.85rem !important;
+                margin-bottom: 0.25rem !important;
+            }
+            
+            /* Modales más compactos */
+            .modal-header {
+                padding: 0.75rem !important;
+            }
+            
+            .modal-body {
+                padding: 0.75rem !important;
+            }
+            
+            .modal-footer {
+                padding: 0.5rem !important;
+            }
+            
+            /* Cards del admin más compactos */
+            .card-header {
+                padding: 0.75rem !important;
+            }
+            
+            .card-body {
+                padding: 0.75rem !important;
+            }
+            
+            /* Grid de imágenes en galería */
+            .col-md-3.col-sm-6 {
+                width: 50% !important;
+                max-width: 50% !important;
+            }
+            
+            /* Reducir títulos en admin */
+            .container-fluid h2 {
+                font-size: 1.25rem !important;
+            }
+            
+            .container-fluid h5 {
+                font-size: 0.95rem !important;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                {% if config and config.logo %}
+                <img src="{{ url_for('static', filename=config.logo) }}" alt="Logo" class="logo">
+                {% else %}
+                <span class="h4 mb-0">{{ config.nombre_sitio if config else 'Tienda' }}</span>
+                {% endif %}
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
+                    </li>
+                    
+                    {% if session.user_id %}
+                        {% if session.is_admin %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                                <i class="bi bi-speedometer2"></i> Admin
+                            </a>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('perfil') }}">
+                                <i class="bi bi-person-circle"></i> Perfil
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('logout') }}">
+                                <i class="bi bi-box-arrow-right"></i> Salir
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="btn btn-primary ms-2" href="{{ url_for('login') }}">
+                                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Botón para abrir sidebar en móvil (solo visible en páginas admin) -->
+    <button class="admin-sidebar-toggle d-md-none" onclick="toggleAdminSidebar()" style="display: none;">
+        <i class="bi bi-list"></i>
+    </button>
+    
+    <!-- Overlay para cerrar sidebar (solo visible en páginas admin) -->
+    <div class="admin-sidebar-overlay" onclick="toggleAdminSidebar()"></div>
+
+    <!-- Content -->
+    {% block content %}{% endblock %}
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="container mt-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Footer -->
+    <footer class="py-4 mt-5">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 {{ config.nombre_sitio if config else 'Tienda Online' }}. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+    // Script global para sidebar del admin
+    function toggleAdminSidebar() {
+        const sidebar = document.querySelector('.col-md-2.bg-light');
+        const overlay = document.querySelector('.admin-sidebar-overlay');
+        
+        if (sidebar) {
+            sidebar.classList.toggle('show');
+            overlay.classList.toggle('show');
+        }
+    }
+    
+    // Mostrar botón de menú solo en páginas admin
+    document.addEventListener('DOMContentLoaded', function() {
+        const adminSidebar = document.querySelector('.col-md-2.bg-light');
+        const toggleBtn = document.querySelector('.admin-sidebar-toggle');
+        
+        if (adminSidebar && toggleBtn) {
+            toggleBtn.style.display = 'block';
+            
+            // Cerrar sidebar al hacer clic en un enlace (solo en móvil)
+            document.querySelectorAll('.col-md-2.bg-light .nav-link').forEach(link => {
+                link.addEventListener('click', function() {
+                    if (window.innerWidth <= 768) {
+                        toggleAdminSidebar();
+                    }
+                });
+            });
+        }
+    });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
