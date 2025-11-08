@@ -267,6 +267,17 @@ def index():
         # Obtener categorías activas
         categorias = db.execute('SELECT * FROM categorias WHERE activo = 1 ORDER BY orden').fetchall()
         
+        # Obtener productos más vendidos (top 6 basados en cantidad de órdenes)
+        productos_mas_vendidos = db.execute('''
+            SELECT p.*, COUNT(o.id) as total_ordenes
+            FROM productos p
+            LEFT JOIN ordenes o ON p.id = o.producto_id
+            WHERE p.activo = 1
+            GROUP BY p.id
+            ORDER BY total_ordenes DESC, p.orden
+            LIMIT 6
+        ''').fetchall()
+        
         db.close()
         
         return render_template('index.html', 
@@ -274,6 +285,7 @@ def index():
                              banners=banners,
                              banners_intermedios=banners_intermedios, 
                              productos=productos,
+                             productos_mas_vendidos=productos_mas_vendidos,
                              categorias=categorias)
     except Exception as e:
         logger.error(f"Error en ruta /: {str(e)}", exc_info=True)
@@ -288,8 +300,8 @@ def producto_detalle(id):
         flash('Producto no encontrado', 'danger')
         return redirect(url_for('index'))
     
-    # Obtener paquetes del producto
-    paquetes = db.execute('SELECT * FROM paquetes WHERE producto_id = ? ORDER BY precio', (id,)).fetchall()
+    # Obtener paquetes del producto ordenados por campo orden
+    paquetes = db.execute('SELECT * FROM paquetes WHERE producto_id = ? ORDER BY COALESCE(orden, 999), precio', (id,)).fetchall()
     
     config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
     
@@ -739,7 +751,7 @@ def admin_productos_eliminar(id):
 def admin_paquetes(producto_id):
     db = get_db()
     producto = db.execute('SELECT * FROM productos WHERE id = ?', (producto_id,)).fetchone()
-    paquetes = db.execute('SELECT * FROM paquetes WHERE producto_id = ? ORDER BY precio', (producto_id,)).fetchall()
+    paquetes = db.execute('SELECT * FROM paquetes WHERE producto_id = ? ORDER BY COALESCE(orden, 999), precio', (producto_id,)).fetchall()
     config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
     db.close()
     
@@ -751,15 +763,19 @@ def admin_paquetes_crear(producto_id):
     db = get_db()
     
     nombre = request.form.get('nombre')
-    descripcion = request.form.get('descripcion')
-    precio = request.form.get('precio')
-    imagen_ruta = request.form.get('imagen_ruta')
+    descripcion = request.form.get('descripcion', '')
+    precio = float(request.form.get('precio'))
+    imagen_ruta = guardar_imagen(request.files.get('imagen'), 'galeria')
     zone_id_required = 1 if request.form.get('zone_id_required') else 0
     
+    # Obtener el siguiente orden disponible
+    max_orden = db.execute('SELECT MAX(COALESCE(orden, 0)) as max_orden FROM paquetes WHERE producto_id = ?', (producto_id,)).fetchone()
+    nuevo_orden = (max_orden['max_orden'] or 0) + 1
+    
     db.execute('''
-        INSERT INTO paquetes (producto_id, nombre, descripcion, precio, imagen, zone_id_required)
-        VALUES (?, ?, ?, ?, ?, ?)
-    ''', (producto_id, nombre, descripcion, precio, imagen_ruta, zone_id_required))
+        INSERT INTO paquetes (producto_id, nombre, descripcion, precio, imagen, zone_id_required, orden)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (producto_id, nombre, descripcion, precio, imagen_ruta, zone_id_required, nuevo_orden))
     
     db.commit()
     db.close()
@@ -822,6 +838,53 @@ def admin_paquetes_eliminar(id, producto_id):
     db.close()
     
     flash('Paquete eliminado', 'success')
+    return redirect(url_for('admin_paquetes', producto_id=producto_id))
+
+@app.route('/admin/paquetes/mover/<int:id>/<int:producto_id>/<direccion>')
+@admin_required
+def admin_paquetes_mover(id, producto_id, direccion):
+    """Mover paquete arriba o abajo en el orden"""
+    db = get_db()
+    
+    # Obtener el paquete actual
+    paquete_actual = db.execute('SELECT * FROM paquetes WHERE id = ?', (id,)).fetchone()
+    orden_actual = paquete_actual['orden'] if paquete_actual['orden'] else 999
+    
+    if direccion == 'arriba':
+        # Buscar el paquete anterior
+        paquete_anterior = db.execute('''
+            SELECT * FROM paquetes 
+            WHERE producto_id = ? AND COALESCE(orden, 999) < ? 
+            ORDER BY COALESCE(orden, 999) DESC 
+            LIMIT 1
+        ''', (producto_id, orden_actual)).fetchone()
+        
+        if paquete_anterior:
+            orden_anterior = paquete_anterior['orden'] if paquete_anterior['orden'] else 999
+            # Intercambiar órdenes
+            db.execute('UPDATE paquetes SET orden = ? WHERE id = ?', (orden_anterior, id))
+            db.execute('UPDATE paquetes SET orden = ? WHERE id = ?', (orden_actual, paquete_anterior['id']))
+            db.commit()
+            flash('Paquete movido arriba', 'success')
+    
+    elif direccion == 'abajo':
+        # Buscar el paquete siguiente
+        paquete_siguiente = db.execute('''
+            SELECT * FROM paquetes 
+            WHERE producto_id = ? AND COALESCE(orden, 999) > ? 
+            ORDER BY COALESCE(orden, 999) ASC 
+            LIMIT 1
+        ''', (producto_id, orden_actual)).fetchone()
+        
+        if paquete_siguiente:
+            orden_siguiente = paquete_siguiente['orden'] if paquete_siguiente['orden'] else 999
+            # Intercambiar órdenes
+            db.execute('UPDATE paquetes SET orden = ? WHERE id = ?', (orden_siguiente, id))
+            db.execute('UPDATE paquetes SET orden = ? WHERE id = ?', (orden_actual, paquete_siguiente['id']))
+            db.commit()
+            flash('Paquete movido abajo', 'success')
+    
+    db.close()
     return redirect(url_for('admin_paquetes', producto_id=producto_id))
 
 @app.route('/admin/banners')

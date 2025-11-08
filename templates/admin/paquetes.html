@@ -92,7 +92,26 @@
                             </div>
                             <p class="card-text text-muted">{{ paquete.descripcion }}</p>
                             <h4 class="price-tag">${{ paquete.precio }}</h4>
-                            <div class="d-flex gap-2 mt-3">
+                            
+                            <!-- Botones de orden -->
+                            <div class="d-flex gap-2 mb-2">
+                                {% if not loop.first %}
+                                <a href="{{ url_for('admin_paquetes_mover', id=paquete.id, producto_id=producto.id, direccion='arriba') }}" 
+                                   class="btn btn-sm btn-outline-secondary" title="Mover arriba">
+                                    <i class="bi bi-arrow-up"></i>
+                                </a>
+                                {% endif %}
+                                {% if not loop.last %}
+                                <a href="{{ url_for('admin_paquetes_mover', id=paquete.id, producto_id=producto.id, direccion='abajo') }}" 
+                                   class="btn btn-sm btn-outline-secondary" title="Mover abajo">
+                                    <i class="bi bi-arrow-down"></i>
+                                </a>
+                                {% endif %}
+                                <span class="badge bg-secondary align-self-center ms-auto">Orden: {{ loop.index }}</span>
+                            </div>
+                            
+                            <!-- Botones de acciones -->
+                            <div class="d-flex gap-2">
                                 <button class="btn btn-sm btn-warning" onclick="editarPaquete({{ paquete.id }})">
                                     <i class="bi bi-pencil"></i> Editar
                                 </button>

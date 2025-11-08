@@ -36,6 +36,43 @@
 {% endif %}
 
 <div class="container" style="margin-top: 0; padding-top: 0;">
+    <!-- Sección de Más Vendidos -->
+    {% if productos_mas_vendidos %}
+    <section class="mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="fw-bold mb-0" style="font-size: 1.5rem;">
+                <i class="bi bi-fire"></i> MÁS VENDIDOS
+            </h2>
+            <div>
+                <button class="btn btn-outline-primary btn-sm" onclick="scrollBestSellers('left')">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <button class="btn btn-outline-primary btn-sm" onclick="scrollBestSellers('right')">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="overflow-hidden">
+            <div id="bestSellersScroll" class="d-flex gap-2" style="overflow-x: auto; scroll-behavior: smooth;">
+                {% for producto in productos_mas_vendidos %}
+                <div class="card product-card-small flex-shrink-0" 
+                     onclick="window.location.href='{{ url_for('producto_detalle', id=producto.id) }}'">
+                    {% if producto.imagen %}
+                    <img src="/uploads/{{ producto.imagen }}" class="card-img-top" alt="{{ producto.nombre }}">
+                    {% else %}
+                    <div class="bg-secondary" style="height: 120px;"></div>
+                    {% endif %}
+                    <div class="card-body p-2">
+                        <h6 class="card-title mb-0">{{ producto.nombre }}</h6>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
     <!-- Sección de Juegos Móviles -->
     {% set juegos = productos|selectattr('tipo', 'equalto', 'juego')|list %}
     {% if juegos %}
@@ -201,6 +238,16 @@ function scrollProducts(direction) {
 function scrollGiftcards(direction) {
     const container = document.getElementById('giftcardsScroll');
     const scrollAmount = 270;
+    if (direction === 'left') {
+        container.scrollLeft -= scrollAmount;
+    } else {
+        container.scrollLeft += scrollAmount;
+    }
+}
+
+function scrollBestSellers(direction) {
+    const container = document.getElementById('bestSellersScroll');
+    const scrollAmount = 180;
     if (direction === 'left') {
         container.scrollLeft -= scrollAmount;
     } else {

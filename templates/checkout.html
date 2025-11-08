@@ -2,123 +2,342 @@
 
 {% block title %}Checkout - {{ super() }}{% endblock %}
 
+{% block extra_css %}
+<style>
+.checkout-total-banner {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+}
+
+.checkout-total-banner h3 {
+    color: white;
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin: 0;
+}
+
+.payment-info-section {
+    background: rgba(42, 42, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.payment-info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+.payment-info-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.payment-info-item i {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+    color: var(--primary-color);
+}
+
+.payment-info-content {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.payment-info-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+}
+
+.btn-copy {
+    background: rgba(220, 0, 0, 0.2);
+    border: 1px solid var(--primary-color);
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.btn-copy:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.timer-section {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(42, 42, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.timer-section h5 {
+    color: white;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.timer-display {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.reference-section {
+    background: rgba(42, 42, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.reference-input {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-size: 1.2rem;
+    text-align: center;
+    letter-spacing: 0.3rem;
+    padding: 1rem;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+.reference-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-color);
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(220, 0, 0, 0.25);
+}
+
+.reference-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.reference-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.3s;
+}
+
+.reference-dot.filled {
+    background: var(--primary-color);
+}
+
+.btn-confirm-payment {
+    background: var(--primary-color);
+    border: none;
+    padding: 1rem;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+.btn-confirm-payment:hover {
+    background: #b30000;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(220, 0, 0, 0.3);
+}
+
+.btn-confirm-payment:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-8">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-cart-check"></i> Confirmar Compra
-                    </h4>
-                </div>
-                <div class="card-body p-4">
-                    <!-- Resumen del Pedido -->
-                    <div class="mb-4">
-                        <h5 class="fw-bold mb-3">Resumen del Pedido</h5>
-                        <div class="row">
-                            <div class="col-6">
-                                <strong>Producto:</strong>
-                            </div>
-                            <div class="col-6 text-end">
-                                {{ producto.nombre }}
-                            </div>
-                        </div>
-                        <div class="row mt-2">
-                            <div class="col-6">
-                                <strong>Paquete:</strong>
-                            </div>
-                            <div class="col-6 text-end">
-                                {{ paquete.nombre }}
-                            </div>
-                        </div>
-                        {% if checkout_data.player_id %}
-                        <div class="row mt-2">
-                            <div class="col-6">
-                                <strong>ID de Jugador:</strong>
-                            </div>
-                            <div class="col-6 text-end">
-                                {{ checkout_data.player_id }}
-                            </div>
-                        </div>
-                        {% endif %}
-                        <div class="row mt-2">
-                            <div class="col-6">
-                                <strong>Método de Pago:</strong>
-                            </div>
-                            <div class="col-6 text-end text-capitalize">
-                                {{ checkout_data.metodo_pago }}
-                            </div>
-                        </div>
-                        <hr class="my-3">
-                        <div class="row">
-                            <div class="col-6">
-                                <h5 class="fw-bold">Total:</h5>
-                            </div>
-                            <div class="col-6 text-end">
-                                <h4 class="price-tag mb-0">${{ paquete.precio }} USD</h4>
-                                {% if config and config.tasa_cambio %}
-                                <p class="text-muted mb-0">${{ "%.2f"|format(paquete.precio * config.tasa_cambio) }} Bs</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Información de Pago -->
-                    <div class="alert alert-info mb-4">
-                        <h6 class="fw-bold">
-                            <i class="bi bi-info-circle"></i> Información de Pago
-                        </h6>
-                        {% if checkout_data.metodo_pago == 'pagomovil' %}
-                        <p class="mb-0">
-                            <strong>Banco:</strong> {{ config.pagomovil_banco if config else 'Banco' }}<br>
-                            <strong>Titular:</strong> {{ config.pagomovil_titular if config else 'Titular' }}<br>
-                            <strong>Teléfono:</strong> {{ config.pagomovil_telefono if config else '0424-0000000' }}<br>
-                            <strong>Cédula:</strong> {{ config.pagomovil_cedula if config else 'V-00000000' }}
-                        </p>
-                        {% else %}
-                        <p class="mb-0">
-                            <strong>Correo de Binance:</strong> {{ config.binance_correo if config else 'ejemplo@correo.com' }}<br>
-                            {% if config and config.binance_pay_id %}
-                            <strong>Binance Pay ID:</strong> <code>{{ config.binance_pay_id }}</code><br>
-                            {% endif %}
-                            <small class="text-muted">Envía el pago a este correo desde tu cuenta de Binance o Binance Pay</small>
-                        </p>
-                        {% endif %}
-                    </div>
-
-                    <!-- Formulario de Referencia -->
-                    <form action="{{ url_for('confirmar_orden') }}" method="POST">
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">
-                                <i class="bi bi-receipt"></i> Número de Referencia
-                            </label>
-                            <input type="text" class="form-control form-control-lg" 
-                                   name="referencia" placeholder="Ingresa el número de referencia de tu pago" required>
-                            <small class="form-text text-muted">
-                                Ingresa el número de referencia o ID de transacción de tu pago.
-                            </small>
-                        </div>
-
-                        <!-- Datos de Contacto -->
-                        <div class="mb-3">
-                            <h6 class="fw-bold">Datos de Contacto</h6>
-                            <p class="mb-1"><strong>Nombre:</strong> {{ checkout_data.nombre }}</p>
-                            <p class="mb-0"><strong>Correo:</strong> {{ checkout_data.correo }}</p>
-                        </div>
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-check-circle"></i> Confirmar Orden
-                            </button>
-                            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver
-                            </a>
-                        </div>
-                    </form>
-                </div>
+            <!-- Banner Total -->
+            <div class="checkout-total-banner">
+                <h3>Total a pagar: 
+                    {% if config and config.tasa_cambio %}
+                        Bs.$ {{ "%.2f"|format(paquete.precio * config.tasa_cambio) }}
+                    {% else %}
+                        ${{ paquete.precio }} USD
+                    {% endif %}
+                </h3>
             </div>
+            <!-- Información de Pago -->
+            <div class="payment-info-section">
+                <h4 class="text-white fw-bold mb-4 text-center">Información de pago</h4>
+                
+                {% if checkout_data.metodo_pago == 'pagomovil' %}
+                <!-- Pago Móvil -->
+                <div class="payment-info-item">
+                    <div class="payment-info-content">
+                        <i class="bi bi-bank"></i>
+                        <span class="payment-info-text">{{ config.pagomovil_banco if config else 'Banco' }}</span>
+                    </div>
+                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.pagomovil_banco if config else '' }}')">Copiar</button>
+                </div>
+                
+                <div class="payment-info-item">
+                    <div class="payment-info-content">
+                        <i class="bi bi-person"></i>
+                        <span class="payment-info-text">{{ config.pagomovil_titular if config else 'Titular' }}</span>
+                    </div>
+                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.pagomovil_titular if config else '' }}')">Copiar</button>
+                </div>
+                
+                <div class="payment-info-item">
+                    <div class="payment-info-content">
+                        <i class="bi bi-phone"></i>
+                        <span class="payment-info-text">{{ config.pagomovil_telefono if config else '0424-0000000' }}</span>
+                    </div>
+                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.pagomovil_telefono if config else '' }}')">Copiar</button>
+                </div>
+                
+                <div class="payment-info-item">
+                    <div class="payment-info-content">
+                        <i class="bi bi-card-text"></i>
+                        <span class="payment-info-text">{{ config.pagomovil_cedula if config else 'V-00000000' }}</span>
+                    </div>
+                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.pagomovil_cedula if config else '' }}')">Copiar</button>
+                </div>
+                {% else %}
+                <!-- Binance -->
+                <div class="payment-info-item">
+                    <div class="payment-info-content">
+                        <i class="bi bi-envelope"></i>
+                        <span class="payment-info-text">{{ config.binance_correo if config else 'ejemplo@correo.com' }}</span>
+                    </div>
+                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.binance_correo if config else '' }}')">Copiar</button>
+                </div>
+                
+                {% if config and config.binance_pay_id %}
+                <div class="payment-info-item">
+                    <div class="payment-info-content">
+                        <i class="bi bi-credit-card"></i>
+                        <span class="payment-info-text">{{ config.binance_pay_id }}</span>
+                    </div>
+                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.binance_pay_id }}')">Copiar</button>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+
+            <!-- Contador de Tiempo -->
+            <div class="timer-section">
+                <h5>Tiempo restante para completar el pago</h5>
+                <div class="timer-display" id="countdown">30:00</div>
+            </div>
+
+            <!-- Formulario de Referencia -->
+            <form action="{{ url_for('confirmar_orden') }}" method="POST" id="checkoutForm">
+                <div class="reference-section">
+                    <label class="form-label text-white fw-bold mb-3 text-center d-block">
+                        Referencia de pago (6 dígitos)
+                    </label>
+                    <input type="text" class="form-control reference-input" 
+                           name="referencia" id="referenciaInput"
+                           placeholder="Ej: 123456"
+                           maxlength="6"
+                           pattern="[0-9]{6}"
+                           required>
+                    <div class="reference-indicators" id="referenceIndicators">
+                        <div class="reference-dot"></div>
+                        <div class="reference-dot"></div>
+                        <div class="reference-dot"></div>
+                        <div class="reference-dot"></div>
+                        <div class="reference-dot"></div>
+                        <div class="reference-dot"></div>
+                    </div>
+                    <small class="form-text text-muted d-block text-center mt-3">
+                        Ingresa exactamente los 6 dígitos de tu referencia de pago.
+                    </small>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-confirm-payment" id="confirmButton" disabled>
+                        Confirmar Pago
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<script>
+// Contador de tiempo
+let timeLeft = 30 * 60; // 30 minutos en segundos
+
+function updateTimer() {
+    const minutes = Math.floor(timeLeft / 60);
+    const seconds = timeLeft % 60;
+    document.getElementById('countdown').textContent = 
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    
+    if (timeLeft > 0) {
+        timeLeft--;
+    } else {
+        alert('El tiempo ha expirado. Por favor, inicia una nueva orden.');
+        window.location.href = '{{ url_for("index") }}';
+    }
+}
+
+setInterval(updateTimer, 1000);
+updateTimer();
+
+// Indicadores de referencia
+const referenciaInput = document.getElementById('referenciaInput');
+const confirmButton = document.getElementById('confirmButton');
+const indicators = document.querySelectorAll('.reference-dot');
+
+referenciaInput.addEventListener('input', function(e) {
+    const value = e.target.value;
+    
+    // Actualizar indicadores
+    indicators.forEach((dot, index) => {
+        if (index < value.length) {
+            dot.classList.add('filled');
+        } else {
+            dot.classList.remove('filled');
+        }
+    });
+    
+    // Habilitar/deshabilitar botón
+    confirmButton.disabled = value.length !== 6;
+});
+
+// Función para copiar al portapapeles
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        // Mostrar feedback
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ Copiado';
+        btn.style.background = '#27ae60';
+        
+        setTimeout(() => {
+            btn.textContent = originalText;
+            btn.style.background = '';
+        }, 2000);
+    }).catch(err => {
+        alert('Error al copiar: ' + err);
+    });
+}
+</script>
 {% endblock %}
