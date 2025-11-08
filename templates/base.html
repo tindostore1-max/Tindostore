@@ -27,14 +27,45 @@
             padding: 1rem 0;
             background-color: rgba(26, 26, 26, 0.85) !important;
             backdrop-filter: blur(10px);
+            z-index: 1030 !important;
         }
         
         .navbar-light .navbar-nav .nav-link {
             color: var(--text-light) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
         }
         
         .navbar-light .navbar-nav .nav-link:hover {
             color: var(--primary-color) !important;
+            background-color: rgba(220, 0, 0, 0.1);
+            border-radius: 5px;
+        }
+        
+        /* Asegurar que los iconos sean visibles */
+        .navbar-light .navbar-nav .nav-link i {
+            color: var(--text-light) !important;
+        }
+        
+        /* Botón hamburguesa visible en móvil */
+        .navbar-toggler {
+            border-color: var(--text-light) !important;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            z-index: 1031 !important;
+        }
+        
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.9)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+        }
+        
+        /* Botón de login/registro */
+        .navbar .btn-primary {
+            color: white !important;
+            font-weight: 600;
+        }
+        
+        .navbar .btn-primary i {
+            color: white !important;
         }
         
         .logo {
@@ -98,6 +129,28 @@
             height: 300px;
             object-fit: cover;
             display: block;
+        }
+        
+        /* Botones del carrusel más visibles */
+        .carousel-control-prev,
+        .carousel-control-next {
+            width: 5%;
+            z-index: 10 !important;
+            opacity: 0.8 !important;
+        }
+        
+        .carousel-control-prev:hover,
+        .carousel-control-next:hover {
+            opacity: 1 !important;
+        }
+        
+        .carousel-control-prev-icon,
+        .carousel-control-next-icon {
+            width: 2rem;
+            height: 2rem;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            padding: 0.5rem;
         }
         
         /* Ocultar títulos del carrusel en PC */
@@ -164,6 +217,18 @@
             font-size: 1.5rem;
             font-weight: bold;
             color: var(--primary-color);
+        }
+        
+        /* Ocultar scrollbar en carruseles de productos */
+        #productsScroll::-webkit-scrollbar,
+        #giftcardsScroll::-webkit-scrollbar {
+            display: none;
+        }
+        
+        #productsScroll,
+        #giftcardsScroll {
+            -ms-overflow-style: none;  /* IE y Edge */
+            scrollbar-width: none;  /* Firefox */
         }
         
         /* ===== ESTILOS TEMA OSCURO PARA ADMIN ===== */
@@ -503,40 +568,54 @@
                 display: none !important;
             }
             
-            /* Tarjetas de productos: 2 por fila en móvil */
+            /* Mantener carrusel horizontal en móvil */
             #productsScroll,
             #giftcardsScroll {
-                display: grid !important;
-                grid-template-columns: repeat(2, 1fr) !important;
+                display: flex !important;
                 gap: 0.75rem !important;
-                overflow-x: visible !important;
+                overflow-x: auto !important;
+                scroll-behavior: smooth !important;
+                -webkit-overflow-scrolling: touch !important;
             }
             
             .product-card {
-                min-width: auto !important;
-                max-width: none !important;
-                width: 100% !important;
+                min-width: 180px !important;
+                max-width: 180px !important;
+                flex-shrink: 0 !important;
             }
             
             .product-card img {
-                height: 140px !important;
+                height: 120px !important;
             }
             
             .product-card .card-body {
-                padding: 0.75rem !important;
+                padding: 0.5rem !important;
             }
             
             .product-card .card-title {
-                font-size: 0.9rem !important;
+                font-size: 0.85rem !important;
             }
             
             .product-card .card-text {
-                font-size: 0.75rem !important;
+                font-size: 0.7rem !important;
             }
             
-            /* Ocultar botones de scroll en móvil ya que usamos grid */
+            /* Ocultar scrollbar completamente pero mantener funcionalidad */
+            #productsScroll::-webkit-scrollbar,
+            #giftcardsScroll::-webkit-scrollbar {
+                display: none;
+            }
+            
+            #productsScroll,
+            #giftcardsScroll {
+                -ms-overflow-style: none;  /* IE y Edge */
+                scrollbar-width: none;  /* Firefox */
+            }
+            
+            /* Mantener botones de scroll visibles en móvil */
             .d-flex.justify-content-between .btn-outline-primary {
-                display: none !important;
+                padding: 0.25rem 0.5rem !important;
+                font-size: 0.8rem !important;
             }
             
             /* Ajustar carrusel de banners intermedios */

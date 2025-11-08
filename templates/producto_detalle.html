@@ -82,14 +82,14 @@
                     </h5>
                     
                     {% if paquetes %}
-                    <div class="row g-3" id="paquetesContainer">
+                    <div class="row g-2 g-md-3" id="paquetesContainer">
                         {% for paquete in paquetes %}
-                        <div class="col-md-6 paquete-item {% if loop.index > 6 %}hidden-package{% endif %}">
+                        <div class="col-6 col-md-6 paquete-item {% if loop.index > 6 %}hidden-package{% endif %}">
                             <div class="card package-card" onclick="selectPackage({{ paquete.id }}, {{ paquete.precio }}, '{{ paquete.nombre }}')">
                                 <div class="card-body text-center py-2">
                                     <input type="radio" name="paquete_id" value="{{ paquete.id }}" required>
                                     
-                                    <div class="d-flex justify-content-between align-items-center package-content">
+                                    <div class="d-flex flex-row justify-content-center justify-content-md-between align-items-center package-content">
                                         <h4 class="fw-bold mb-0">{{ paquete.nombre }}</h4>
                                         {% if paquete.imagen %}
                                         <img src="/uploads/{{ paquete.imagen }}" alt="{{ paquete.nombre }}">
@@ -343,6 +343,17 @@
 
 /* Estilos responsivos para móviles */
 @media (max-width: 768px) {
+    /* FORZAR 2 COLUMNAS EN MÓVIL - MUY IMPORTANTE */
+    #paquetesContainer .paquete-item,
+    #paquetesContainer .col-6,
+    #paquetesContainer [class*="col-"] {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+        width: 50% !important;
+        padding-left: 0.25rem !important;
+        padding-right: 0.25rem !important;
+    }
+    
     /* Ocultar panel de resumen en móvil (ya está en footer) */
     #resumenPanel {
         display: none !important;
@@ -391,6 +402,11 @@
     .paquete-item {
         flex: 0 0 50% !important;
         max-width: 50% !important;
+        width: 50% !important;
+    }
+    
+    .payment-method img {
+        max-width: 50% !important;
     }
     
     .package-card {
@@ -401,19 +417,22 @@
     }
     
     .package-card .card-body {
-        padding: 0.5rem 0.75rem !important;
+        padding: 0.5rem 0.3rem !important;
         background-color: transparent !important;
         display: flex !important;
         align-items: center !important;
-        justify-content: space-between !important;
-        min-height: 45px !important;
+        justify-content: center !important;
+        min-height: 75px !important;
     }
     
     .package-card h4 {
-        font-size: 0.85rem !important;
+        font-size: 0.75rem !important;
         color: white !important;
         margin: 0 !important;
-        text-align: left !important;
+        text-align: center !important;
+        line-height: 1.2 !important;
+        flex: 0 !important;
+        white-space: nowrap !important;
     }
     
     .package-card .package-description {
@@ -421,9 +440,9 @@
     }
     
     .package-card img {
-        width: 35px !important;
-        height: 35px !important;
-        border-radius: 6px;
+        width: 50px !important;
+        height: 50px !important;
+        border-radius: 8px;
         background: transparent !important;
         object-fit: contain !important;
         flex-shrink: 0 !important;
@@ -432,9 +451,10 @@
     
     .package-card .package-content {
         width: 100% !important;
-        justify-content: space-between !important;
+        flex-direction: row !important;
+        justify-content: center !important;
         align-items: center !important;
-        gap: 0 !important;
+        gap: 6px !important;
     }
     
     .package-card .mb-2 {
