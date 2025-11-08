@@ -18,13 +18,15 @@ mkdir -p static/uploads/banners
 mkdir -p static/uploads/productos
 mkdir -p static/uploads/galeria
 
-# Inicializar la base de datos si no existe
+# Inicializar la base de datos
 DB_PATH="${DATABASE_URL:-tienda.db}"
-if [ ! -f "$DB_PATH" ]; then
-    echo "Inicializando base de datos en $DB_PATH..."
-    python init_db.py
-else
-    echo "Base de datos ya existe en $DB_PATH"
-fi
+echo "Verificando base de datos en: $DB_PATH"
+
+# Siempre ejecutar init_db.py (usa CREATE TABLE IF NOT EXISTS)
+# Esto asegura que todas las tablas existan
+echo "Ejecutando inicializacion de base de datos..."
+python init_db.py
+
+echo "Base de datos lista en: $DB_PATH"
 
 echo "Build completado exitosamente!"

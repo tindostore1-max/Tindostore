@@ -4,11 +4,21 @@ from werkzeug.security import generate_password_hash
 
 def init_database():
     db_path = os.getenv('DATABASE_URL', 'tienda.db')
-    print(f'Inicializando base de datos en: {db_path}')
+    print(f'\n=== INICIALIZANDO BASE DE DATOS ===')
+    print(f'Ruta: {db_path}')
+    
+    # Verificar si el directorio existe
+    db_dir = os.path.dirname(db_path)
+    if db_dir and not os.path.exists(db_dir):
+        print(f'Creando directorio: {db_dir}')
+        os.makedirs(db_dir, exist_ok=True)
+    
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
+    print('Conexión a base de datos exitosa')
     
     # Tabla de usuarios
+    print('Creando tabla: usuarios')
     c.execute('''
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,6 +31,7 @@ def init_database():
     ''')
     
     # Tabla de configuración del sitio
+    print('Creando tabla: configuracion')
     c.execute('''
         CREATE TABLE IF NOT EXISTS configuracion (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,6 +48,7 @@ def init_database():
     ''')
     
     # Tabla de categorías
+    print('Creando tabla: categorias')
     c.execute('''
         CREATE TABLE IF NOT EXISTS categorias (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,6 +59,7 @@ def init_database():
     ''')
     
     # Tabla de productos
+    print('Creando tabla: productos')
     c.execute('''
         CREATE TABLE IF NOT EXISTS productos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,6 +76,7 @@ def init_database():
     ''')
     
     # Tabla de paquetes
+    print('Creando tabla: paquetes')
     c.execute('''
         CREATE TABLE IF NOT EXISTS paquetes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,6 +89,7 @@ def init_database():
     ''')
     
     # Tabla de banners
+    print('Creando tabla: banners')
     c.execute('''
         CREATE TABLE IF NOT EXISTS banners (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -87,6 +102,7 @@ def init_database():
     ''')
     
     # Tabla de banners intermedios (3 banners entre juegos móviles y gift cards)
+    print('Creando tabla: banners_intermedios')
     c.execute('''
         CREATE TABLE IF NOT EXISTS banners_intermedios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -99,6 +115,7 @@ def init_database():
     ''')
     
     # Tabla de galería de imágenes
+    print('Creando tabla: galeria')
     c.execute('''
         CREATE TABLE IF NOT EXISTS galeria (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -110,6 +127,7 @@ def init_database():
     ''')
     
     # Tabla de órdenes
+    print('Creando tabla: ordenes')
     c.execute('''
         CREATE TABLE IF NOT EXISTS ordenes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -130,14 +148,16 @@ def init_database():
     ''')
     
     # Crear usuario admin por defecto
+    print('\n=== DATOS INICIALES ===')
     admin_password = generate_password_hash('123456')
     try:
         c.execute('''
             INSERT INTO usuarios (username, email, password, is_admin)
             VALUES (?, ?, ?, ?)
         ''', ('admin', 'admin@tienda.com', admin_password, 1))
+        print('[OK] Usuario admin creado (user: admin, pass: 123456)')
     except sqlite3.IntegrityError:
-        print('Usuario admin ya existe')
+        print('[SKIP] Usuario admin ya existe')
     
     # Crear configuración por defecto
     try:
@@ -145,12 +165,19 @@ def init_database():
             INSERT INTO configuracion (nombre_sitio, logo)
             VALUES (?, ?)
         ''', ('Mi Tienda Online', 'uploads/logos/default-logo.png'))
+        print('[OK] Configuración inicial creada')
     except sqlite3.IntegrityError:
-        print('Configuración ya existe')
+        print('[SKIP] Configuración ya existe')
     
     conn.commit()
+    
+    # Verificar que la tabla configuracion existe y tiene datos
+    result = c.execute('SELECT COUNT(*) FROM configuracion').fetchone()
+    print(f'\n=== VERIFICACIÓN ===')
+    print(f'Registros en tabla configuracion: {result[0]}')
+    
     conn.close()
-    print('Base de datos inicializada correctamente')
+    print('\n[ÉXITO] Base de datos inicializada correctamente\n')
 
 if __name__ == '__main__':
     init_database()
