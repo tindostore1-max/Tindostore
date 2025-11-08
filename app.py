@@ -5,6 +5,7 @@ from functools import wraps
 import sqlite3
 import os
 import logging
+import secrets
 from datetime import datetime
 from dotenv import load_dotenv
 
@@ -16,7 +17,38 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'tu_clave_secreta_aqui_cambiala')
+
+# Configurar SECRET_KEY persistente
+def get_secret_key():
+    """Obtener o generar SECRET_KEY persistente"""
+    secret_key = os.getenv('SECRET_KEY')
+    
+    if not secret_key:
+        # Intentar cargar desde archivo en disco persistente
+        secret_file = os.path.join(os.path.dirname(os.getenv('DATABASE_URL', 'tienda.db')), '.secret_key')
+        
+        try:
+            if os.path.exists(secret_file):
+                with open(secret_file, 'r') as f:
+                    secret_key = f.read().strip()
+                    logger.info("SECRET_KEY cargada desde archivo persistente")
+            else:
+                # Generar nueva SECRET_KEY
+                import secrets
+                secret_key = secrets.token_hex(32)
+                
+                # Guardar en disco persistente
+                os.makedirs(os.path.dirname(secret_file), exist_ok=True)
+                with open(secret_file, 'w') as f:
+                    f.write(secret_key)
+                logger.info("Nueva SECRET_KEY generada y guardada")
+        except Exception as e:
+            logger.warning(f"No se pudo persistir SECRET_KEY: {e}. Usando clave por defecto.")
+            secret_key = 'tu_clave_secreta_aqui_cambiala_' + secrets.token_hex(16)
+    
+    return secret_key
+
+app.secret_key = get_secret_key()
 app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB max
 
@@ -84,18 +116,29 @@ def inicializar_sistema():
                 from init_db import init_database
                 init_database()
             else:
-                # Verificar si necesita migraciones
+                # Verificar si necesita migraciones de esquema
                 cursor.execute("PRAGMA table_info(productos)")
                 columnas = [row[1] for row in cursor.fetchall()]
                 
                 if 'zone_id_required' not in columnas:
-                    logger.warning("Base de datos necesita migraciones. Ejecutando...")
+                    logger.warning("Base de datos necesita migraciones de esquema. Ejecutando...")
                     conn.close()
                     from migrar_todas_columnas import migrar_todas_columnas
                     migrar_todas_columnas()
-                    logger.info("Migraciones completadas")
+                    logger.info("Migraciones de esquema completadas")
                 else:
-                    logger.info("Base de datos verificada correctamente")
+                    logger.info("Esquema de BD verificado correctamente")
+                
+                # Migrar rutas de imágenes si es necesario
+                cursor.execute("SELECT logo FROM configuracion WHERE logo LIKE 'uploads/%' LIMIT 1")
+                if cursor.fetchone():
+                    logger.warning("BD tiene rutas antiguas. Migrando rutas de imágenes...")
+                    conn.close()
+                    from migrar_rutas_imagenes import migrar_rutas
+                    migrar_rutas()
+                    logger.info("Rutas de imágenes migradas")
+                else:
+                    logger.info("Rutas de imágenes correctas")
                     conn.close()
                 
     except Exception as e:
@@ -1049,11 +1092,12 @@ def admin_galeria_eliminar(id):
     imagen = db.execute('SELECT ruta FROM galeria WHERE id = ?', (id,)).fetchone()
     if imagen:
         try:
-            filepath = os.path.join('static', imagen['ruta'])
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], imagen['ruta'])
             if os.path.exists(filepath):
                 os.remove(filepath)
-        except:
-            pass
+                logger.info(f"Imagen eliminada: {filepath}")
+        except Exception as e:
+            logger.warning(f"No se pudo eliminar imagen física: {e}")
     
     db.execute('DELETE FROM galeria WHERE id = ?', (id,))
     db.commit()
