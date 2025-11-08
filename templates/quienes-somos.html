@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}Quiénes Somos - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg" style="background: rgba(26, 26, 26, 0.95); border: 1px solid rgba(220, 0, 0, 0.3);">
+                <div class="card-header text-center py-4" style="background: linear-gradient(135deg, rgba(220, 0, 0, 0.2) 0%, rgba(180, 0, 0, 0.1) 100%); border-bottom: 2px solid rgba(220, 0, 0, 0.5);">
+                    <h1 class="mb-2" style="color: var(--primary-color); font-weight: bold;">Quiénes Somos</h1>
+                    <p class="text-muted mb-0"><i class="bi bi-shop"></i> Tindo Store</p>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                    <!-- Sobre Nosotros -->
+                    <div class="about-section mb-5">
+                        <div class="about-icon text-center mb-4">
+                            <i class="bi bi-controller" style="font-size: 4rem; color: var(--primary-color);"></i>
+                        </div>
+                        <p class="about-content text-center">
+                            Tindo Store es una plataforma digital especializada en la venta de productos relacionados con videojuegos, 
+                            recargas, tarjetas de regalo y servicios complementarios. Nacimos con el objetivo de ofrecer una experiencia 
+                            rápida, segura y confiable para gamers y entusiastas digitales en toda Latinoamérica.
+                        </p>
+                        <p class="about-content text-center">
+                            Nos destacamos por nuestra atención personalizada, entregas eficientes y compromiso con la calidad. 
+                            Cada recarga, código o tarjeta que ofrecemos está respaldada por un sistema de verificación y soporte constante.
+                        </p>
+                    </div>
+
+                    <hr style="border-color: rgba(220, 0, 0, 0.3); margin: 3rem 0;">
+
+                    <!-- Misión y Visión -->
+                    <div class="row">
+                        <!-- Misión -->
+                        <div class="col-md-6 mb-4">
+                            <div class="mission-vision-card h-100">
+                                <div class="card-icon mb-3">
+                                    <i class="bi bi-bullseye"></i>
+                                </div>
+                                <h3 class="card-title-mv">Misión</h3>
+                                <p class="card-content-mv">
+                                    Brindar soluciones digitales inmediatas y seguras para la comunidad gamer, facilitando el acceso 
+                                    a recargas, tarjetas y promociones con atención 24/7, procesos claros y entrega garantizada.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Visión -->
+                        <div class="col-md-6 mb-4">
+                            <div class="mission-vision-card h-100">
+                                <div class="card-icon mb-3">
+                                    <i class="bi bi-eye"></i>
+                                </div>
+                                <h3 class="card-title-mv">Visión</h3>
+                                <p class="card-content-mv">
+                                    Ser la tienda digital líder en Latinoamérica en servicios para videojuegos, reconocida por su 
+                                    confiabilidad, innovación y cercanía con el cliente. Aspiramos a expandir nuestra oferta, integrar 
+                                    nuevas tecnologías y construir una comunidad sólida que confíe en Tindo Store como su aliado gamer.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="border-color: rgba(220, 0, 0, 0.3); margin: 3rem 0;">
+
+                    <!-- Valores -->
+                    <div class="valores-section">
+                        <h3 class="text-center mb-4" style="color: var(--primary-color); font-weight: bold;">
+                            <i class="bi bi-star-fill"></i> Nuestros Valores
+                        </h3>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="valor-item">
+                                    <i class="bi bi-shield-check"></i>
+                                    <h5>Confiabilidad</h5>
+                                    <p>Productos verificados y entregas garantizadas</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="valor-item">
+                                    <i class="bi bi-lightning-charge"></i>
+                                    <h5>Rapidez</h5>
+                                    <p>Entrega entre 5 minutos y 1 hora</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="valor-item">
+                                    <i class="bi bi-headset"></i>
+                                    <h5>Soporte 24/7</h5>
+                                    <p>Atención continua todos los días del año</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="border-color: rgba(220, 0, 0, 0.3); margin: 2rem 0;">
+
+                    <!-- Botones -->
+                    <div class="text-center">
+                        <h5 style="color: var(--primary-color);">¿Listo para comenzar?</h5>
+                        <p class="text-muted mb-3">Explora nuestros productos y servicios</p>
+                        <div class="d-flex gap-3 justify-content-center flex-wrap">
+                            <a href="{{ url_for('index') }}" class="btn btn-danger">
+                                <i class="bi bi-shop"></i> Ver productos
+                            </a>
+                            <a href="{{ url_for('terminos') }}" class="btn btn-outline-danger">
+                                <i class="bi bi-file-text"></i> Términos y condiciones
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.about-section {
+    padding: 2rem 0;
+}
+
+.about-content {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+}
+
+.mission-vision-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(220, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.mission-vision-card:hover {
+    background: rgba(220, 0, 0, 0.1);
+    border-color: var(--primary-color);
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(220, 0, 0, 0.3);
+}
+
+.card-icon {
+    text-align: center;
+}
+
+.card-icon i {
+    font-size: 3.5rem;
+    color: var(--primary-color);
+}
+
+.card-title-mv {
+    color: #fff;
+    font-size: 1.8rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.card-content-mv {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+    line-height: 1.7;
+    margin: 0;
+}
+
+.valores-section {
+    margin-top: 2rem;
+}
+
+.valor-item {
+    text-align: center;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 10px;
+    transition: all 0.3s;
+}
+
+.valor-item:hover {
+    background: rgba(220, 0, 0, 0.1);
+    transform: translateY(-3px);
+}
+
+.valor-item i {
+    font-size: 2.5rem;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.valor-item h5 {
+    color: #fff;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.valor-item p {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .about-content {
+        font-size: 1rem;
+    }
+    
+    .card-title-mv {
+        font-size: 1.5rem;
+    }
+    
+    .card-content-mv {
+        font-size: 0.95rem;
+    }
+}
+</style>
+{% endblock %}

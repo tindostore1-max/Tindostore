@@ -544,6 +544,14 @@ def terminos():
     db.close()
     return render_template('terminos.html', config=config)
 
+@app.route('/quienes-somos')
+def quienes_somos():
+    """Página de Quiénes Somos"""
+    db = get_db()
+    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+    db.close()
+    return render_template('quienes-somos.html', config=config)
+
 @app.route('/actualizar_perfil', methods=['POST'])
 @login_required
 def actualizar_perfil():
