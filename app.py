@@ -429,15 +429,19 @@ def confirmar_orden():
     
     db.close()
     
+    # Convertir sqlite3.Row a dict
+    producto_dict = dict(producto)
+    paquete_dict = dict(paquete)
+    
     # Preparar datos para los correos
     orden_data = {
         'orden_id': orden_id,
         'fecha': datetime.now().strftime('%d de %B de %Y'),
         'nombre': checkout_data['nombre'],
         'correo': checkout_data['correo'],
-        'producto': producto['nombre'],
-        'paquete': paquete['nombre'],
-        'precio': f"{paquete['precio']:.2f}",
+        'producto': producto_dict['nombre'],
+        'paquete': paquete_dict['nombre'],
+        'precio': f"{paquete_dict['precio']:.2f}",
         'player_id': checkout_data['player_id'],
         'zone_id': checkout_data.get('zone_id', ''),
         'metodo_pago': checkout_data['metodo_pago'],
@@ -450,7 +454,7 @@ def confirmar_orden():
         html_admin = email_service.generar_html_nueva_orden(orden_data)
         email_service.enviar_correo(
             admin_email,
-            f"🔔 Nueva Orden #{orden_id} - {producto['nombre']}",
+            f"🔔 Nueva Orden #{orden_id} - {producto_dict['nombre']}",
             html_admin
         )
         logger.info(f"Notificación de nueva orden enviada al admin")
@@ -1379,27 +1383,30 @@ def admin_ordenes_cambiar_estado(id, estado):
     # Si el estado es "completado", enviar notificación al cliente
     if estado == 'completado' and orden:
         try:
+            # Convertir sqlite3.Row a dict para facilitar el acceso
+            orden_dict = dict(orden)
+            
             orden_data = {
-                'orden_id': orden['id'],
-                'fecha': datetime.strptime(orden['fecha'], '%Y-%m-%d %H:%M:%S').strftime('%d de %B de %Y'),
-                'nombre': orden['nombre'],
-                'correo': orden['correo'],
-                'producto': orden['producto_nombre'],
-                'paquete': orden['paquete_nombre'],
-                'precio': f"{orden['precio']:.2f}",
-                'player_id': orden.get('player_id', ''),
-                'zone_id': orden.get('zone_id', ''),
-                'producto_tipo': orden['producto_tipo'],
+                'orden_id': orden_dict['id'],
+                'fecha': datetime.strptime(orden_dict['fecha'], '%Y-%m-%d %H:%M:%S').strftime('%d de %B de %Y'),
+                'nombre': orden_dict['nombre'],
+                'correo': orden_dict['correo'],
+                'producto': orden_dict['producto_nombre'],
+                'paquete': orden_dict['paquete_nombre'],
+                'precio': f"{orden_dict['precio']:.2f}",
+                'player_id': orden_dict.get('player_id', ''),
+                'zone_id': orden_dict.get('zone_id', ''),
+                'producto_tipo': orden_dict['producto_tipo'],
                 'codigo_giftcard': codigo_giftcard if codigo_giftcard else ''
             }
             
             html_completada = email_service.generar_html_orden_completada(orden_data)
             email_service.enviar_correo(
-                orden['correo'],
-                f"🎉 {'Gift Card Lista' if orden['producto_tipo'] == 'giftcard' else 'Recarga Completada'} - Orden #{orden['id']} - Tindo Store",
+                orden_dict['correo'],
+                f"🎉 {'Gift Card Lista' if orden_dict['producto_tipo'] == 'giftcard' else 'Recarga Completada'} - Orden #{orden_dict['id']} - Tindo Store",
                 html_completada
             )
-            logger.info(f"Notificación de orden completada enviada a: {orden['correo']}")
+            logger.info(f"Notificación de orden completada enviada a: {orden_dict['correo']}")
         except Exception as e:
             logger.error(f"Error enviando notificación de orden completada: {e}", exc_info=True)
     
