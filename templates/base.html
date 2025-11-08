@@ -853,8 +853,8 @@
                         <a class="nav-link" href="{{ url_for('index') }}">Inicio</a>
                     </li>
                     
-                    {% if session.user_id %}
-                        {% if session.is_admin %}
+                    {% if session.get('user_id') is not none %}
+                        {% if session.get('is_admin') %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
                                 <i class="bi bi-speedometer2"></i> Admin
@@ -874,7 +874,7 @@
                     {% else %}
                         <li class="nav-item">
                             <a class="btn btn-primary ms-2" href="{{ url_for('login') }}">
-                                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                                <i class="bi box-arrow-in-right"></i> Iniciar Sesión
                             </a>
                         </li>
                     {% endif %}
