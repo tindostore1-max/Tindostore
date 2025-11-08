@@ -267,7 +267,7 @@ function abrirGaleriaModal(targetField) {
                         <div class="form-check position-absolute top-0 end-0 m-2">
                             <input class="form-check-input imagen-checkbox" type="checkbox" value="${img.ruta}" data-nombre="${img.nombre}" id="img_${img.id}">
                         </div>
-                        <img src="/static/${img.ruta}" class="card-img-top" alt="${img.nombre}" style="height: 150px; object-fit: cover;">
+                        <img src="/uploads/${img.ruta}" class="card-img-top" alt="${img.nombre}" style="height: 150px; object-fit: cover;">
                         <div class="card-body p-2">
                             <p class="card-text small text-truncate mb-0" title="${img.nombre}">${img.nombre}</p>
                         </div>
@@ -308,7 +308,7 @@ function confirmarSeleccion() {
     if (preview) {
         preview.innerHTML = `
             <div class="alert alert-success d-flex align-items-center">
-                <img src="/static/${ruta}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                <img src="/uploads/${ruta}" style="height: 50px; object-fit: cover; margin-right: 10px;">
                 <div>
                     <strong>Imagen seleccionada:</strong><br>
                     <small>${nombre}</small>
@@ -338,7 +338,7 @@ function editarPaquete(id) {
             if (paquete.imagen) {
                 document.getElementById('preview_paquete_edit').innerHTML = `
                     <div class="alert alert-info d-flex align-items-center">
-                        <img src="/static/${paquete.imagen}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                        <img src="/uploads/${paquete.imagen}" style="height: 50px; object-fit: cover; margin-right: 10px;">
                         <small>Imagen actual</small>
                     </div>
                 `;
