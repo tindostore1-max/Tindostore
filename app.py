@@ -161,6 +161,16 @@ def inicializar_sistema():
                 else:
                     logger.info("Esquema de BD verificado correctamente")
                 
+                # Verificar si tabla paquetes tiene columna orden
+                cursor.execute("PRAGMA table_info(paquetes)")
+                columnas_paquetes = [row[1] for row in cursor.fetchall()]
+                
+                if 'orden' not in columnas_paquetes:
+                    logger.warning("Agregando columna 'orden' a tabla paquetes...")
+                    cursor.execute("ALTER TABLE paquetes ADD COLUMN orden INTEGER")
+                    conn.commit()
+                    logger.info("Columna 'orden' agregada exitosamente")
+                
                 # Migrar rutas de imágenes si es necesario
                 cursor.execute("SELECT logo FROM configuracion WHERE logo LIKE 'uploads/%' LIMIT 1")
                 if cursor.fetchone():
