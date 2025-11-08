@@ -758,7 +758,7 @@
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">
                 {% if config and config.logo %}
-                <img src="{{ url_for('static', filename=config.logo) }}" alt="Logo" class="logo">
+                <img src="/uploads/{{ config.logo }}" alt="Logo" class="logo">
                 {% else %}
                 <span class="h4 mb-0">{{ config.nombre_sitio if config else 'Tienda' }}</span>
                 {% endif %}

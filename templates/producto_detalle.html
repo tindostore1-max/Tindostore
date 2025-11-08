@@ -134,7 +134,7 @@
                                     
                                     <div class="d-flex justify-content-center align-items-center payment-content">
                                         {% if config and config.pagomovil_imagen %}
-                                            <img src="{{ url_for('static', filename=config.pagomovil_imagen) }}" alt="Pago Móvil">
+                                            <img src="/uploads/{{ config.pagomovil_imagen }}" alt="Pago Móvil">
                                         {% else %}
                                             <div class="text-center">
                                                 <i class="bi bi-phone" style="font-size: 2rem; color: var(--primary-color);"></i>
@@ -152,7 +152,7 @@
                                     
                                     <div class="d-flex justify-content-center align-items-center payment-content">
                                         {% if config and config.binance_imagen %}
-                                            <img src="{{ url_for('static', filename=config.binance_imagen) }}" alt="Binance">
+                                            <img src="/uploads/{{ config.binance_imagen }}" alt="Binance">
                                         {% else %}
                                             <div class="text-center">
                                                 <i class="bi bi-currency-bitcoin" style="font-size: 2rem; color: var(--primary-color);"></i>
