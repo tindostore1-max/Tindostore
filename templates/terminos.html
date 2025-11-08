@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Términos y Condiciones - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card shadow-lg" style="background: rgba(26, 26, 26, 0.95); border: 1px solid rgba(220, 0, 0, 0.3);">
+                <div class="card-header text-center py-4" style="background: linear-gradient(135deg, rgba(220, 0, 0, 0.2) 0%, rgba(180, 0, 0, 0.1) 100%); border-bottom: 2px solid rgba(220, 0, 0, 0.5);">
+                    <h1 class="mb-2" style="color: var(--primary-color); font-weight: bold;">Términos y Condiciones</h1>
+                    <p class="text-muted mb-0"><i class="bi bi-calendar"></i> Última actualización: 8 de noviembre de 2025</p>
+                </div>
+                
+                <div class="card-body p-4 p-md-5">
+                    <!-- Sección 1 -->
+                    <div class="terminos-section mb-5">
+                        <h3 class="section-title">
+                            <i class="bi bi-check-circle-fill"></i> 1. Aceptación de los términos
+                        </h3>
+                        <p class="section-content">
+                            Al acceder y utilizar los servicios de <strong>Tindo Store</strong>, el usuario declara haber leído, 
+                            comprendido y aceptado íntegramente los presentes Términos y Condiciones. En caso de no estar de 
+                            acuerdo con alguna disposición, se recomienda abstenerse de utilizar la plataforma.
+                        </p>
+                    </div>
+
+                    <!-- Sección 2 -->
+                    <div class="terminos-section mb-5">
+                        <h3 class="section-title">
+                            <i class="bi bi-box-seam"></i> 2. Servicios ofrecidos
+                        </h3>
+                        <p class="section-content mb-3">
+                            Tindo Store se dedica a la comercialización de productos digitales relacionados con videojuegos, 
+                            Gift Cards y otros servicios digitales:
+                        </p>
+                        
+                        <div class="servicios-list">
+                            <div class="servicio-item">
+                                <i class="bi bi-controller"></i>
+                                <div>
+                                    <strong>Recargas por ID</strong>
+                                    <p>Free Fire, Blood Strike, Mobile Legends, Arena Breakout, entre otros.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="servicio-item">
+                                <i class="bi bi-person-circle"></i>
+                                <div>
+                                    <strong>Recargas internas</strong>
+                                    <p>Cuentas preconfiguradas o vinculadas.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="servicio-item">
+                                <i class="bi bi-gift"></i>
+                                <div>
+                                    <strong>Tarjetas de regalo digitales</strong>
+                                    <p>PlayStation, Xbox, Google Play, Steam, etc.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="servicio-item">
+                                <i class="bi bi-ticket-perforated"></i>
+                                <div>
+                                    <strong>Códigos y promociones</strong>
+                                    <p>Códigos canjeables, promociones digitales y otros servicios complementarios.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mt-4" style="background: rgba(13, 202, 240, 0.1); border-color: rgba(13, 202, 240, 0.3);">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Entrega Digital:</strong> Todos los productos son entregados de manera digital al correo electrónico, 
+                            cuenta o plataforma indicada por el cliente.
+                        </div>
+                    </div>
+
+                    <!-- Sección 3 -->
+                    <div class="terminos-section mb-5">
+                        <h3 class="section-title">
+                            <i class="bi bi-shield-check"></i> 3. Responsabilidades del usuario
+                        </h3>
+                        <ul class="section-content">
+                            <li>Proporcionar información veraz y actualizada al momento de realizar una compra.</li>
+                            <li>Verificar la compatibilidad del producto digital con su cuenta o dispositivo.</li>
+                            <li>Mantener la confidencialidad de las credenciales de acceso a su cuenta.</li>
+                            <li>Utilizar los productos adquiridos de acuerdo con las políticas del desarrollador o proveedor original.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Sección 4 -->
+                    <div class="terminos-section mb-5">
+                        <h3 class="section-title">
+                            <i class="bi bi-credit-card"></i> 4. Políticas de pago
+                        </h3>
+                        <p class="section-content">
+                            Aceptamos pagos a través de:
+                        </p>
+                        <ul class="section-content">
+                            <li><strong>Pago Móvil:</strong> Transferencias bancarias locales en Venezuela.</li>
+                            <li><strong>Binance:</strong> Pagos en criptomonedas a través de Binance Pay.</li>
+                        </ul>
+                        <p class="section-content">
+                            El cliente debe proporcionar el número de referencia válido de la transacción para confirmar su orden.
+                        </p>
+                    </div>
+
+                    <!-- Sección 5 -->
+                    <div class="terminos-section mb-5">
+                        <h3 class="section-title">
+                            <i class="bi bi-arrow-repeat"></i> 5. Política de reembolsos y devoluciones
+                        </h3>
+                        <p class="section-content">
+                            Debido a la naturaleza digital de nuestros productos:
+                        </p>
+                        <ul class="section-content">
+                            <li>No se aceptan devoluciones ni reembolsos una vez que el producto ha sido entregado.</li>
+                            <li>En caso de error en la entrega, el cliente deberá contactar al soporte dentro de las 24 horas.</li>
+                            <li>Tindo Store se compromete a resolver cualquier inconveniente técnico de manera oportuna.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Sección 6 -->
+                    <div class="terminos-section mb-5">
+                        <h3 class="section-title">
+                            <i class="bi bi-lock"></i> 6. Privacidad y protección de datos
+                        </h3>
+                        <p class="section-content">
+                            Nos comprometemos a proteger la información personal de nuestros clientes. Los datos recopilados 
+                            serán utilizados únicamente para procesar pedidos y mejorar nuestros servicios. No compartimos 
+                            información con terceros sin consentimiento expreso.
+                        </p>
+                    </div>
+
+                    <!-- Sección 7 -->
+                    <div class="terminos-section mb-4">
+                        <h3 class="section-title">
+                            <i class="bi bi-exclamation-triangle"></i> 7. Limitación de responsabilidad
+                        </h3>
+                        <p class="section-content">
+                            Tindo Store actúa como intermediario en la venta de productos digitales y no se hace responsable de:
+                        </p>
+                        <ul class="section-content mb-0">
+                            <li>Cambios en las políticas de los proveedores originales (Epic Games, Riot Games, Google, etc.).</li>
+                            <li>Suspensión o cierre de cuentas por parte de terceros.</li>
+                            <li>Problemas técnicos ajenos a nuestra plataforma.</li>
+                        </ul>
+                    </div>
+
+                    <hr style="border-color: rgba(220, 0, 0, 0.3); margin: 2rem 0;">
+
+                    <!-- Contacto -->
+                    <div class="text-center">
+                        <h5 style="color: var(--primary-color);">¿Tienes alguna duda?</h5>
+                        <p class="text-muted mb-3">Contáctanos y estaremos encantados de ayudarte</p>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-danger">
+                            <i class="bi bi-house"></i> Volver al inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.terminos-section {
+    padding-left: 1rem;
+    border-left: 3px solid rgba(220, 0, 0, 0.5);
+}
+
+.section-title {
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.section-title i {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+}
+
+.section-content {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+.section-content strong {
+    color: #fff;
+}
+
+.section-content ul {
+    padding-left: 1.5rem;
+}
+
+.section-content li {
+    margin-bottom: 0.5rem;
+}
+
+.servicios-list {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.servicio-item {
+    display: flex;
+    align-items: start;
+    gap: 1rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s;
+}
+
+.servicio-item:hover {
+    background: rgba(220, 0, 0, 0.1);
+    border-color: rgba(220, 0, 0, 0.3);
+    transform: translateX(5px);
+}
+
+.servicio-item i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.servicio-item strong {
+    color: #fff;
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.servicio-item p {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .section-title {
+        font-size: 1.2rem;
+    }
+    
+    .servicio-item {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .servicio-item i {
+        font-size: 2.5rem;
+    }
+}
+</style>
+{% endblock %}

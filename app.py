@@ -536,6 +536,14 @@ def perfil():
     
     return render_template('perfil.html', user=user, ordenes=ordenes, config=config)
 
+@app.route('/terminos')
+def terminos():
+    """Página de Términos y Condiciones"""
+    db = get_db()
+    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+    db.close()
+    return render_template('terminos.html', config=config)
+
 @app.route('/actualizar_perfil', methods=['POST'])
 @login_required
 def actualizar_perfil():
