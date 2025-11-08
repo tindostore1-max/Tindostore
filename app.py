@@ -29,40 +29,72 @@ logger.info(f"DATABASE_URL configurado en: {DATABASE_URL}")
 logger.info(f"UPLOAD_FOLDER configurado en: {app.config['UPLOAD_FOLDER']}")
 
 # Verificar y crear base de datos si no existe
-def verificar_base_datos():
-    """Verificar que la base de datos tenga todas las tablas necesarias"""
+def inicializar_sistema():
+    """Inicializar base de datos y directorios al arrancar el servicio"""
+    logger.info("=== INICIALIZANDO SISTEMA ===")
+    
+    # 1. Crear directorios de uploads si no existen
+    upload_folder = app.config['UPLOAD_FOLDER']
+    logger.info(f"Verificando directorio de uploads: {upload_folder}")
+    
     try:
-        conn = sqlite3.connect(DATABASE_URL)
-        cursor = conn.cursor()
+        directorios = [
+            upload_folder,
+            os.path.join(upload_folder, 'logos'),
+            os.path.join(upload_folder, 'banners'),
+            os.path.join(upload_folder, 'productos'),
+            os.path.join(upload_folder, 'galeria')
+        ]
         
-        # Verificar si existe la tabla configuracion
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='configuracion'")
-        if not cursor.fetchone():
-            logger.warning("Base de datos no inicializada. Ejecutando init_db...")
-            conn.close()
-            # Importar y ejecutar init_database
+        for directorio in directorios:
+            if not os.path.exists(directorio):
+                logger.info(f"Creando directorio: {directorio}")
+                os.makedirs(directorio, exist_ok=True)
+            else:
+                logger.info(f"Directorio existe: {directorio}")
+    except Exception as e:
+        logger.error(f"Error creando directorios: {e}")
+        raise
+    
+    # 2. Verificar/crear base de datos
+    logger.info(f"Verificando base de datos: {DATABASE_URL}")
+    
+    try:
+        # Crear directorio de la BD si no existe
+        db_dir = os.path.dirname(DATABASE_URL)
+        if db_dir and not os.path.exists(db_dir):
+            logger.info(f"Creando directorio de BD: {db_dir}")
+            os.makedirs(db_dir, exist_ok=True)
+        
+        # Verificar si la BD existe y tiene tablas
+        if not os.path.exists(DATABASE_URL):
+            logger.warning(f"Base de datos no existe: {DATABASE_URL}")
+            logger.info("Inicializando base de datos...")
             from init_db import init_database
             init_database()
-            logger.info("Base de datos inicializada correctamente")
         else:
-            logger.info("Base de datos verificada correctamente")
-        
-        conn.close()
+            # Verificar que tenga las tablas necesarias
+            conn = sqlite3.connect(DATABASE_URL)
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='configuracion'")
+            
+            if not cursor.fetchone():
+                logger.warning("Base de datos sin tablas. Inicializando...")
+                conn.close()
+                from init_db import init_database
+                init_database()
+            else:
+                logger.info("Base de datos verificada correctamente")
+                conn.close()
+                
     except Exception as e:
-        logger.error(f"Error verificando base de datos: {e}")
+        logger.error(f"Error verificando base de datos: {e}", exc_info=True)
         raise
+    
+    logger.info("=== SISTEMA INICIALIZADO ===")
 
-# Verificar base de datos al iniciar
-verificar_base_datos()
-
-# Asegurar que existe la carpeta de uploads
-upload_folder = app.config['UPLOAD_FOLDER']
-os.makedirs(upload_folder, exist_ok=True)
-os.makedirs(os.path.join(upload_folder, 'logos'), exist_ok=True)
-os.makedirs(os.path.join(upload_folder, 'banners'), exist_ok=True)
-os.makedirs(os.path.join(upload_folder, 'productos'), exist_ok=True)
-os.makedirs(os.path.join(upload_folder, 'galeria'), exist_ok=True)
-logger.info(f"Directorios de uploads creados en: {upload_folder}")
+# Inicializar sistema al arrancar
+inicializar_sistema()
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -71,7 +103,6 @@ def allowed_file(filename):
 
 def get_db():
     try:
-        logger.info(f"Conectando a base de datos: {DATABASE_URL}")
         conn = sqlite3.connect(DATABASE_URL)
         conn.row_factory = sqlite3.Row
         return conn
@@ -102,10 +133,8 @@ def admin_required(f):
 def index():
     try:
         db = get_db()
-        logger.info("Conexión a BD exitosa para ruta /")
         
         # Obtener configuración del sitio
-        logger.info("Consultando tabla configuracion")
         try:
             config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
             if not config:
@@ -128,15 +157,12 @@ def index():
             config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
         
         # Obtener banners activos
-        logger.info("Consultando tabla banners")
         banners = db.execute('SELECT * FROM banners WHERE activo = 1 ORDER BY orden').fetchall()
         
         # Obtener banners intermedios activos (máximo 3)
-        logger.info("Consultando tabla banners_intermedios")
         banners_intermedios = db.execute('SELECT * FROM banners_intermedios WHERE activo = 1 ORDER BY orden LIMIT 3').fetchall()
         
         # Obtener productos activos (juegos móviles)
-        logger.info("Consultando tabla productos")
         productos = db.execute('''
             SELECT p.*, c.nombre as categoria_nombre 
             FROM productos p 
@@ -146,11 +172,9 @@ def index():
         ''').fetchall()
         
         # Obtener categorías activas
-        logger.info("Consultando tabla categorias")
         categorias = db.execute('SELECT * FROM categorias WHERE activo = 1 ORDER BY orden').fetchall()
         
         db.close()
-        logger.info("Renderizando template index.html")
         
         return render_template('index.html', 
                              config=config, 
