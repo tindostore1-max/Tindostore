@@ -15,7 +15,7 @@
             {% for banner in banners[:3] %}
             <div class="carousel-item {% if loop.first %}active{% endif %}">
                 {% if banner.imagen %}
-                <img src="{{ url_for('static', filename=banner.imagen) }}" class="d-block w-100" alt="{{ banner.titulo }}">
+                <img src="/uploads/{{ banner.imagen }}" class="d-block w-100" alt="{{ banner.titulo }}">
                 {% else %}
                 <div class="d-block w-100 bg-secondary" style="height: 300px;"></div>
                 {% endif %}
@@ -60,7 +60,7 @@
                 <div class="card product-card flex-shrink-0" style="min-width: 250px; max-width: 250px;" 
                      onclick="window.location.href='{{ url_for('producto_detalle', id=producto.id) }}'">
                     {% if producto.imagen %}
-                    <img src="{{ url_for('static', filename=producto.imagen) }}" class="card-img-top" alt="{{ producto.nombre }}">
+                    <img src="/uploads/{{ producto.imagen }}" class="card-img-top" alt="{{ producto.nombre }}">
                     {% else %}
                     <div class="bg-secondary" style="height: 200px;"></div>
                     {% endif %}
@@ -94,14 +94,14 @@
                     {% if banner.enlace %}
                     <a href="{{ banner.enlace }}" target="_blank">
                         {% if banner.imagen %}
-                        <img src="{{ url_for('static', filename=banner.imagen) }}" class="d-block w-100" alt="{{ banner.titulo }}">
+                        <img src="/uploads/{{ banner.imagen }}" class="d-block w-100" alt="{{ banner.titulo }}">
                         {% else %}
                         <div class="d-block w-100 bg-secondary" style="height: 300px;"></div>
                         {% endif %}
                     </a>
                     {% else %}
                         {% if banner.imagen %}
-                        <img src="{{ url_for('static', filename=banner.imagen) }}" class="d-block w-100" alt="{{ banner.titulo }}">
+                        <img src="/uploads/{{ banner.imagen }}" class="d-block w-100" alt="{{ banner.titulo }}">
                         {% else %}
                         <div class="d-block w-100 bg-secondary" style="height: 300px;"></div>
                         {% endif %}
@@ -168,7 +168,7 @@
                 <div class="card product-card flex-shrink-0" style="min-width: 250px; max-width: 250px;" 
                      onclick="window.location.href='{{ url_for('producto_detalle', id=producto.id) }}'">
                     {% if producto.imagen %}
-                    <img src="{{ url_for('static', filename=producto.imagen) }}" class="card-img-top" alt="{{ producto.nombre }}">
+                    <img src="/uploads/{{ producto.imagen }}" class="card-img-top" alt="{{ producto.nombre }}">
                     {% else %}
                     <div class="bg-secondary" style="height: 200px;"></div>
                     {% endif %}

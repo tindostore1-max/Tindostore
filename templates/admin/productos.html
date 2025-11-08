@@ -68,7 +68,7 @@
                 <div class="col-md-4 mb-4">
                     <div class="card">
                         {% if producto.imagen %}
-                        <img src="{{ url_for('static', filename=producto.imagen) }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 200px; object-fit: cover;">
+                        <img src="/uploads/{{ producto.imagen }}" class="card-img-top" alt="{{ producto.nombre }}" style="height: 200px; object-fit: cover;">
                         {% else %}
                         <div class="bg-secondary" style="height: 200px;"></div>
                         {% endif %}
@@ -397,7 +397,7 @@ function editarProducto(id) {
             if (producto.imagen) {
                 document.getElementById('preview_editar').innerHTML = `
                     <div class="alert alert-info d-flex align-items-center">
-                        <img src="/static/${producto.imagen}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                        <img src="/uploads/${producto.imagen}" style="height: 50px; object-fit: cover; margin-right: 10px;">
                         <small>Imagen actual</small>
                     </div>
                 `;

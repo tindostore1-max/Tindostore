@@ -10,7 +10,7 @@
             <!-- Imagen del Producto -->
             <div class="mb-4 text-center">
                 {% if producto.imagen %}
-                <img src="{{ url_for('static', filename=producto.imagen) }}" class="rounded shadow" alt="{{ producto.nombre }}" style="width: 300px; height: 300px; object-fit: cover;">
+                <img src="/uploads/{{ producto.imagen }}" class="rounded shadow" alt="{{ producto.nombre }}" style="width: 300px; height: 300px; object-fit: cover;">
                 {% else %}
                 <div class="bg-secondary rounded mx-auto" style="width: 300px; height: 300px;"></div>
                 {% endif %}
