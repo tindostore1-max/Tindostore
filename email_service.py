@@ -362,6 +362,56 @@ def generar_html_orden_completada(orden_data):
     """
     Genera HTML para notificación al cliente cuando se completa la orden
     """
+    es_giftcard = orden_data.get('producto_tipo') == 'giftcard'
+    codigo_giftcard = orden_data.get('codigo_giftcard', '')
+    
+    # Sección del código de gift card si aplica
+    codigo_section = ''
+    if es_giftcard and codigo_giftcard:
+        codigo_section = f'''
+        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                    padding: 25px; 
+                    border-radius: 10px; 
+                    margin: 25px 0; 
+                    text-align: center;">
+            <h3 style="color: white; margin: 0 0 15px 0; font-size: 18px;">
+                🎁 Tu Código de Gift Card
+            </h3>
+            <div style="background-color: white; 
+                        padding: 15px 20px; 
+                        border-radius: 8px; 
+                        display: inline-block;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);">
+                <code style="font-size: 24px; 
+                            font-weight: bold; 
+                            color: #333; 
+                            letter-spacing: 2px;
+                            font-family: 'Courier New', monospace;">
+                    {codigo_giftcard}
+                </code>
+            </div>
+            <p style="color: white; margin: 15px 0 0 0; font-size: 14px;">
+                Copia este código para canjearlo en la plataforma
+            </p>
+        </div>
+        '''
+    
+    titulo = "🎁 ¡Tu Gift Card está Lista!" if es_giftcard else "🎉 ¡Recarga Completada!"
+    mensaje_exito = "¡Tu gift card ha sido procesada exitosamente!" if es_giftcard else "¡Tu recarga ha sido procesada exitosamente!"
+    mensaje_sub = "Ya puedes canjear tu código" if es_giftcard else "Ya puedes disfrutar de tu compra"
+    mensaje_principal = "Nos complace informarte que tu pedido ha sido completado con éxito. " + ("A continuación encontrarás tu código para canjear." if es_giftcard else "Los recursos han sido agregados a tu cuenta.")
+    
+    # Nota final según el tipo
+    nota_final = '''
+        <div class="note">
+            <strong>💡 Instrucciones de canje:</strong> Ingresa este código en la plataforma correspondiente para activar tu gift card. Si tienes problemas para canjear, contáctanos.
+        </div>
+    ''' if es_giftcard else '''
+        <div class="note">
+            <strong>💡 Nota importante:</strong> Si no ves los recursos en tu cuenta, por favor verifica que hayas ingresado el ID correcto y espera unos minutos. Si el problema persiste, contáctanos.
+        </div>
+    '''
+    
     return f"""
     <!DOCTYPE html>
     <html>
@@ -451,18 +501,20 @@ def generar_html_orden_completada(orden_data):
     <body>
         <div class="container">
             <div class="header">
-                <h1>🎉 ¡Recarga Completada!</h1>
+                <h1>{titulo}</h1>
             </div>
             <div class="content">
                 <p style="font-size: 18px; color: #333;"><strong>Hola {orden_data['nombre']},</strong></p>
                 
                 <div class="success-box">
                     <div class="success-icon">✅</div>
-                    <h2 style="margin: 10px 0; color: #28a745;">¡Tu recarga ha sido procesada exitosamente!</h2>
-                    <p style="margin: 0; color: #666;">Ya puedes disfrutar de tu compra</p>
+                    <h2 style="margin: 10px 0; color: #28a745;">{mensaje_exito}</h2>
+                    <p style="margin: 0; color: #666;">{mensaje_sub}</p>
                 </div>
                 
-                <p>Nos complace informarte que tu pedido ha sido completado con éxito. Los recursos han sido agregados a tu cuenta.</p>
+                <p>{mensaje_principal}</p>
+                
+                {codigo_section}
                 
                 <h2 style="color: #333; margin-top: 25px;">Detalles de la Orden</h2>
                 <div class="order-details">
@@ -478,10 +530,10 @@ def generar_html_orden_completada(orden_data):
                         <span class="label">Producto:</span>
                         <span class="value">{orden_data['producto']}</span>
                     </div>
-                    <div class="detail-row">
+                    {f'''<div class="detail-row">
                         <span class="label">ID de jugador:</span>
                         <span class="value">{orden_data['player_id']}</span>
-                    </div>
+                    </div>''' if orden_data.get('player_id') else ''}
                     {f'''<div class="detail-row">
                         <span class="label">Zone ID:</span>
                         <span class="value">{orden_data['zone_id']}</span>
@@ -500,12 +552,10 @@ def generar_html_orden_completada(orden_data):
                     </div>
                 </div>
                 
-                <div class="note">
-                    <strong>💡 Nota importante:</strong> Si no ves los recursos en tu cuenta, por favor verifica que hayas ingresado el ID correcto y espera unos minutos. Si el problema persiste, contáctanos.
-                </div>
+                {nota_final}
                 
                 <p style="margin-top: 20px;">
-                    ¡Gracias por confiar en Tindo Store! Esperamos verte pronto para tu próxima recarga.
+                    ¡Gracias por confiar en Tindo Store! Esperamos verte pronto para tu próxima {'gift card' if es_giftcard else 'recarga'}.
                 </p>
                 
                 <p style="margin-top: 30px; color: #666;">
@@ -518,7 +568,7 @@ def generar_html_orden_completada(orden_data):
                 </p>
             </div>
             <div class="footer">
-                <p>Tindo Store - Tu tienda de confianza para recargas de juegos</p>
+                <p>Tindo Store - Tu tienda de confianza para recargas de juegos y gift cards</p>
                 <p style="font-size: 12px; color: #999; margin-top: 10px;">
                     ¿Te gustó nuestro servicio? ¡Recomiéndanos con tus amigos!
                 </p>

@@ -137,10 +137,17 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             {% if orden.estado == 'pendiente' %}
+                                            {% if orden.producto_tipo == 'giftcard' %}
+                                            <button class="btn btn-success" title="Aceptar con código" 
+                                                    onclick="mostrarModalCodigo({{ orden.id }}, '{{ orden.producto_nombre }}')">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                            {% else %}
                                             <a href="{{ url_for('admin_ordenes_cambiar_estado', id=orden.id, estado='completado') }}" 
                                                class="btn btn-success" title="Marcar como completado">
                                                 <i class="bi bi-check"></i>
                                             </a>
+                                            {% endif %}
                                             <a href="{{ url_for('admin_ordenes_cambiar_estado', id=orden.id, estado='cancelado') }}" 
                                                class="btn btn-danger" title="Cancelar">
                                                 <i class="bi bi-x"></i>
@@ -235,10 +242,17 @@
                         
                         {% if orden.estado == 'pendiente' %}
                         <div class="orden-actions">
+                            {% if orden.producto_tipo == 'giftcard' %}
+                            <button class="btn btn-success w-100 mb-2" 
+                                    onclick="mostrarModalCodigo({{ orden.id }}, '{{ orden.producto_nombre }}')">
+                                <i class="bi bi-gift"></i> Aceptar con Código
+                            </button>
+                            {% else %}
                             <a href="{{ url_for('admin_ordenes_cambiar_estado', id=orden.id, estado='completado') }}" 
                                class="btn btn-success w-100 mb-2">
                                 <i class="bi bi-check-circle"></i> Aceptar Orden
                             </a>
+                            {% endif %}
                             <a href="{{ url_for('admin_ordenes_cambiar_estado', id=orden.id, estado='cancelado') }}" 
                                class="btn btn-danger w-100">
                                 <i class="bi bi-x-circle"></i> Rechazar Orden
@@ -260,6 +274,42 @@
                 </div>
             </div>
             {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para ingresar código de gift card -->
+<div class="modal fade" id="modalCodigoGiftcard" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #1a1a1a; border: 1px solid rgba(100,100,100,0.3);">
+            <div class="modal-header" style="border-bottom: 1px solid rgba(100,100,100,0.3);">
+                <h5 class="modal-title" style="color: var(--primary-color);">
+                    <i class="bi bi-gift"></i> Ingresar Código de Gift Card
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formCodigoGiftcard" method="POST">
+                <div class="modal-body">
+                    <p style="color: #ccc; margin-bottom: 15px;">Producto: <strong id="productoNombre"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label" style="color: #fff;">Código de Gift Card *</label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="codigo_giftcard" 
+                               id="codigoGiftcard"
+                               required
+                               placeholder="Ej: XXXX-XXXX-XXXX-XXXX"
+                               style="background-color: rgba(40,40,40,0.8); border: 1px solid rgba(100,100,100,0.5); color: #fff;">
+                        <small class="text-muted">Este código será enviado al cliente por correo</small>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid rgba(100,100,100,0.3);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Completar Orden
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -397,6 +447,19 @@ function copyToClipboard(text, button) {
         console.error('Error al copiar:', err);
         alert('Error al copiar al portapapeles');
     });
+}
+
+function mostrarModalCodigo(ordenId, productoNombre) {
+    document.getElementById('productoNombre').textContent = productoNombre;
+    document.getElementById('codigoGiftcard').value = '';
+    
+    // Configurar la acción del formulario
+    const form = document.getElementById('formCodigoGiftcard');
+    form.action = `/admin/ordenes/cambiar_estado/${ordenId}/completado`;
+    
+    // Mostrar el modal
+    const modal = new bootstrap.Modal(document.getElementById('modalCodigoGiftcard'));
+    modal.show();
 }
 </script>
 {% endblock %}

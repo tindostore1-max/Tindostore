@@ -1329,7 +1329,7 @@ def admin_galeria_listar():
 def admin_ordenes():
     db = get_db()
     ordenes = db.execute('''
-        SELECT o.*, p.nombre as producto_nombre, pk.nombre as paquete_nombre, pk.precio,
+        SELECT o.*, p.nombre as producto_nombre, p.tipo as producto_tipo, pk.nombre as paquete_nombre, pk.precio,
                u.username as usuario_nombre
         FROM ordenes o
         LEFT JOIN productos p ON o.producto_id = p.id
@@ -1342,27 +1342,42 @@ def admin_ordenes():
     
     return render_template('admin/ordenes.html', ordenes=ordenes, config=config)
 
-@app.route('/admin/ordenes/cambiar_estado/<int:id>/<estado>')
+@app.route('/admin/ordenes/cambiar_estado/<int:id>/<estado>', methods=['GET', 'POST'])
 @admin_required
 def admin_ordenes_cambiar_estado(id, estado):
     db = get_db()
     
     # Obtener datos de la orden antes de actualizar
     orden = db.execute('''
-        SELECT o.*, p.nombre as producto_nombre, pk.nombre as paquete_nombre, pk.precio
+        SELECT o.*, p.nombre as producto_nombre, p.tipo as producto_tipo, pk.nombre as paquete_nombre, pk.precio
         FROM ordenes o
         LEFT JOIN productos p ON o.producto_id = p.id
         LEFT JOIN paquetes pk ON o.paquete_id = pk.id
         WHERE o.id = ?
     ''', (id,)).fetchone()
     
-    # Actualizar estado
-    db.execute('UPDATE ordenes SET estado = ? WHERE id = ?', (estado, id))
+    # Si es POST y se está completando una gift card, obtener el código
+    codigo_giftcard = None
+    if request.method == 'POST' and estado == 'completado':
+        codigo_giftcard = request.form.get('codigo_giftcard', '').strip()
+        
+        # Si es una gift card y no hay código, mostrar error
+        if orden and orden['producto_tipo'] == 'giftcard' and not codigo_giftcard:
+            flash('Debe ingresar el código de la gift card', 'danger')
+            db.close()
+            return redirect(url_for('admin_ordenes'))
+    
+    # Actualizar estado y código si aplica
+    if codigo_giftcard:
+        db.execute('UPDATE ordenes SET estado = ?, codigo_giftcard = ? WHERE id = ?', (estado, codigo_giftcard, id))
+    else:
+        db.execute('UPDATE ordenes SET estado = ? WHERE id = ?', (estado, id))
+    
     db.commit()
     db.close()
     
-    # Si el estado es "completada", enviar notificación al cliente
-    if estado == 'completada' and orden:
+    # Si el estado es "completado", enviar notificación al cliente
+    if estado == 'completado' and orden:
         try:
             orden_data = {
                 'orden_id': orden['id'],
@@ -1372,19 +1387,21 @@ def admin_ordenes_cambiar_estado(id, estado):
                 'producto': orden['producto_nombre'],
                 'paquete': orden['paquete_nombre'],
                 'precio': f"{orden['precio']:.2f}",
-                'player_id': orden['player_id'],
-                'zone_id': orden.get('zone_id', '')
+                'player_id': orden.get('player_id', ''),
+                'zone_id': orden.get('zone_id', ''),
+                'producto_tipo': orden['producto_tipo'],
+                'codigo_giftcard': codigo_giftcard if codigo_giftcard else ''
             }
             
             html_completada = email_service.generar_html_orden_completada(orden_data)
             email_service.enviar_correo(
                 orden['correo'],
-                f"🎉 Recarga Completada - Orden #{orden['id']} - Tindo Store",
+                f"🎉 {'Gift Card Lista' if orden['producto_tipo'] == 'giftcard' else 'Recarga Completada'} - Orden #{orden['id']} - Tindo Store",
                 html_completada
             )
             logger.info(f"Notificación de orden completada enviada a: {orden['correo']}")
         except Exception as e:
-            logger.error(f"Error enviando notificación de orden completada: {e}")
+            logger.error(f"Error enviando notificación de orden completada: {e}", exc_info=True)
     
     flash(f'Estado de orden cambiado a {estado}', 'success')
     return redirect(url_for('admin_ordenes'))
