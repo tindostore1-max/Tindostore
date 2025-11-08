@@ -83,7 +83,7 @@
                 <div class="col-md-4 mb-3">
                     <div class="card">
                         {% if banner.imagen %}
-                        <img src="{{ url_for('static', filename=banner.imagen) }}" class="card-img-top" alt="{{ banner.titulo }}" style="height: 200px; object-fit: cover;">
+                        <img src="/uploads/{{ banner.imagen }}" class="card-img-top" alt="{{ banner.titulo }}" style="height: 200px; object-fit: cover;">
                         {% endif %}
                         <div class="card-body">
                             <h5 class="card-title">{{ banner.titulo }}</h5>

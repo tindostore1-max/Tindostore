@@ -75,7 +75,7 @@
                             <label class="form-label">Logo</label>
                             {% if config and config.logo %}
                             <div class="mb-3">
-                                <img src="{{ url_for('static', filename=config.logo) }}" alt="Logo actual" style="max-height: 100px;" class="border rounded p-2">
+                                <img src="/uploads/{{ config.logo }}" alt="Logo actual" style="max-height: 100px;" class="border rounded p-2">
                             </div>
                             {% endif %}
                             <input type="hidden" id="imagen_ruta_logo" name="logo_ruta">
@@ -113,7 +113,7 @@
                             <div id="preview_pagomovil" class="mt-2">
                                 {% if config and config.pagomovil_imagen %}
                                 <div class="alert alert-info d-flex align-items-center">
-                                    <img src="{{ url_for('static', filename=config.pagomovil_imagen) }}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                                    <img src="/uploads/{{ config.pagomovil_imagen }}" style="height: 50px; object-fit: cover; margin-right: 10px;">
                                     <small>Imagen actual</small>
                                 </div>
                                 {% endif %}
@@ -166,7 +166,7 @@
                             <div id="preview_binance" class="mt-2">
                                 {% if config and config.binance_imagen %}
                                 <div class="alert alert-info d-flex align-items-center">
-                                    <img src="{{ url_for('static', filename=config.binance_imagen) }}" style="height: 50px; object-fit: cover; margin-right: 10px;">
+                                    <img src="/uploads/{{ config.binance_imagen }}" style="height: 50px; object-fit: cover; margin-right: 10px;">
                                     <small>Imagen actual</small>
                                 </div>
                                 {% endif %}

@@ -49,13 +49,24 @@ def get_secret_key():
     return secret_key
 
 app.secret_key = get_secret_key()
-app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
+
+# Detectar entorno de producción y usar ruta absoluta
+if os.path.exists('/data'):
+    # Producción en Render con disco persistente
+    app.config['UPLOAD_FOLDER'] = '/data/uploads'
+    DATABASE_URL = '/data/tienda.db'
+    logger.info("Entorno de PRODUCCIÓN detectado (Render)")
+else:
+    # Desarrollo local
+    app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
+    DATABASE_URL = os.getenv('DATABASE_URL', 'tienda.db')
+    logger.info("Entorno de DESARROLLO detectado (Local)")
+
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB max
 
 # Variables de administrador desde entorno
 ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@tindo.com')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'Admin123!')
-DATABASE_URL = os.getenv('DATABASE_URL', 'tienda.db')
 
 logger.info(f"DATABASE_URL configurado en: {DATABASE_URL}")
 logger.info(f"UPLOAD_FOLDER configurado en: {app.config['UPLOAD_FOLDER']}")
