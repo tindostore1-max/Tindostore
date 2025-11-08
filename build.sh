@@ -6,7 +6,13 @@ set -o errexit
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# Crear directorios necesarios
+# Crear directorios necesarios en el disco persistente
+mkdir -p /data/uploads/logos
+mkdir -p /data/uploads/banners
+mkdir -p /data/uploads/productos
+mkdir -p /data/uploads/galeria
+
+# También crear directorios en static para desarrollo local
 mkdir -p static/uploads/logos
 mkdir -p static/uploads/banners
 mkdir -p static/uploads/productos

@@ -6,7 +6,7 @@ services:
     startCommand: "gunicorn app:app"
     disk:
       name: tindo-data
-      mountPath: /opt/render/project/src
+      mountPath: /data
       sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
@@ -18,7 +18,7 @@ services:
       - key: ADMIN_PASSWORD
         sync: false
       - key: DATABASE_URL
-        value: /opt/render/project/src/tienda.db
+        value: /data/tienda.db
       - key: FLASK_ENV
         value: production
       - key: DEBUG
@@ -26,5 +26,5 @@ services:
       - key: MAX_CONTENT_LENGTH
         value: 16777216
       - key: UPLOAD_FOLDER
-        value: static/uploads
+        value: /data/uploads
     autoDeploy: true

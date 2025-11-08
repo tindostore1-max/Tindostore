@@ -4,8 +4,13 @@ from werkzeug.utils import secure_filename
 from functools import wraps
 import sqlite3
 import os
+import logging
 from datetime import datetime
 from dotenv import load_dotenv
+
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Cargar variables de entorno
 load_dotenv()
@@ -20,11 +25,17 @@ ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', 'admin@tindo.com')
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'Admin123!')
 DATABASE_URL = os.getenv('DATABASE_URL', 'tienda.db')
 
+logger.info(f"DATABASE_URL configurado en: {DATABASE_URL}")
+logger.info(f"UPLOAD_FOLDER configurado en: {app.config['UPLOAD_FOLDER']}")
+
 # Asegurar que existe la carpeta de uploads
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs('static/uploads/logos', exist_ok=True)
-os.makedirs('static/uploads/banners', exist_ok=True)
-os.makedirs('static/uploads/productos', exist_ok=True)
+upload_folder = app.config['UPLOAD_FOLDER']
+os.makedirs(upload_folder, exist_ok=True)
+os.makedirs(os.path.join(upload_folder, 'logos'), exist_ok=True)
+os.makedirs(os.path.join(upload_folder, 'banners'), exist_ok=True)
+os.makedirs(os.path.join(upload_folder, 'productos'), exist_ok=True)
+os.makedirs(os.path.join(upload_folder, 'galeria'), exist_ok=True)
+logger.info(f"Directorios de uploads creados en: {upload_folder}")
 
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -32,9 +43,14 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_db():
-    conn = sqlite3.connect(DATABASE_URL)
-    conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        logger.info(f"Conectando a base de datos: {DATABASE_URL}")
+        conn = sqlite3.connect(DATABASE_URL)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except Exception as e:
+        logger.error(f"Error conectando a base de datos {DATABASE_URL}: {str(e)}")
+        raise
 
 def login_required(f):
     @wraps(f)
@@ -57,37 +73,50 @@ def admin_required(f):
 
 @app.route('/')
 def index():
-    db = get_db()
-    
-    # Obtener configuración del sitio
-    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
-    
-    # Obtener banners activos
-    banners = db.execute('SELECT * FROM banners WHERE activo = 1 ORDER BY orden').fetchall()
-    
-    # Obtener banners intermedios activos (máximo 3)
-    banners_intermedios = db.execute('SELECT * FROM banners_intermedios WHERE activo = 1 ORDER BY orden LIMIT 3').fetchall()
-    
-    # Obtener productos activos (juegos móviles)
-    productos = db.execute('''
-        SELECT p.*, c.nombre as categoria_nombre 
-        FROM productos p 
-        LEFT JOIN categorias c ON p.categoria_id = c.id 
-        WHERE p.activo = 1 
-        ORDER BY p.orden
-    ''').fetchall()
-    
-    # Obtener categorías activas
-    categorias = db.execute('SELECT * FROM categorias WHERE activo = 1 ORDER BY orden').fetchall()
-    
-    db.close()
-    
-    return render_template('index.html', 
-                         config=config, 
-                         banners=banners,
-                         banners_intermedios=banners_intermedios, 
-                         productos=productos,
-                         categorias=categorias)
+    try:
+        db = get_db()
+        logger.info("Conexión a BD exitosa para ruta /")
+        
+        # Obtener configuración del sitio
+        logger.info("Consultando tabla configuracion")
+        config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+        if not config:
+            logger.warning("No se encontró configuración con id=1")
+        
+        # Obtener banners activos
+        logger.info("Consultando tabla banners")
+        banners = db.execute('SELECT * FROM banners WHERE activo = 1 ORDER BY orden').fetchall()
+        
+        # Obtener banners intermedios activos (máximo 3)
+        logger.info("Consultando tabla banners_intermedios")
+        banners_intermedios = db.execute('SELECT * FROM banners_intermedios WHERE activo = 1 ORDER BY orden LIMIT 3').fetchall()
+        
+        # Obtener productos activos (juegos móviles)
+        logger.info("Consultando tabla productos")
+        productos = db.execute('''
+            SELECT p.*, c.nombre as categoria_nombre 
+            FROM productos p 
+            LEFT JOIN categorias c ON p.categoria_id = c.id 
+            WHERE p.activo = 1 
+            ORDER BY p.orden
+        ''').fetchall()
+        
+        # Obtener categorías activas
+        logger.info("Consultando tabla categorias")
+        categorias = db.execute('SELECT * FROM categorias WHERE activo = 1 ORDER BY orden').fetchall()
+        
+        db.close()
+        logger.info("Renderizando template index.html")
+        
+        return render_template('index.html', 
+                             config=config, 
+                             banners=banners,
+                             banners_intermedios=banners_intermedios, 
+                             productos=productos,
+                             categorias=categorias)
+    except Exception as e:
+        logger.error(f"Error en ruta /: {str(e)}", exc_info=True)
+        return f"Error al cargar la página: {str(e)}", 500
 
 @app.route('/producto/<int:id>')
 def producto_detalle(id):
@@ -986,6 +1015,20 @@ def admin_ordenes_cambiar_estado(id, estado):
     
     flash(f'Estado de orden cambiado a {estado}', 'success')
     return redirect(url_for('admin_ordenes'))
+
+# Servir archivos estáticos desde el disco persistente cuando UPLOAD_FOLDER es absoluto
+@app.route('/uploads/<path:filename>')
+def serve_uploads(filename):
+    """Servir archivos desde el disco persistente o static/uploads"""
+    from flask import send_from_directory
+    upload_folder = app.config['UPLOAD_FOLDER']
+    
+    # Si UPLOAD_FOLDER es absoluto (como /data/uploads), usar esa ruta
+    if os.path.isabs(upload_folder):
+        return send_from_directory(upload_folder, filename)
+    # Si es relativo, usar static/uploads
+    else:
+        return send_from_directory('static/uploads', filename)
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
