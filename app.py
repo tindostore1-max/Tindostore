@@ -114,7 +114,7 @@ def index():
                 db.execute('''
                     INSERT INTO configuracion (nombre_sitio, logo)
                     VALUES (?, ?)
-                ''', ('Mi Tienda Online', 'uploads/logos/default-logo.png'))
+                ''', ('Mi Tienda Online', 'logos/default-logo.png'))
                 db.commit()
                 config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
         except sqlite3.OperationalError as e:
@@ -474,7 +474,7 @@ def admin_configuracion():
                      pagomovil_banco, pagomovil_telefono, pagomovil_cedula, pagomovil_titular, pagomovil_imagen,
                      binance_correo, binance_pay_id, binance_imagen))
         else:
-            logo_path = logo_path or 'uploads/logos/default-logo.png'
+            logo_path = logo_path or 'logos/default-logo.png'
             db.execute('''INSERT INTO configuracion 
                 (nombre_sitio, logo, tasa_cambio, pagomovil_banco, pagomovil_telefono, pagomovil_cedula, pagomovil_titular, pagomovil_imagen,
                  binance_correo, binance_pay_id, binance_imagen)
@@ -510,28 +510,37 @@ def admin_productos():
 @app.route('/admin/productos/crear', methods=['POST'])
 @admin_required
 def admin_productos_crear():
-    db = get_db()
-    
-    nombre = request.form.get('nombre')
-    descripcion = request.form.get('descripcion')
-    categoria_id = request.form.get('categoria_id')
-    tipo = request.form.get('tipo')  # juego o giftcard
-    orden = request.form.get('orden', 0)
-    zone_id_required = 1 if request.form.get('zone_id_required') else 0
-    
-    # Obtener imagen de galería
-    imagen_path = request.form.get('imagen_ruta')
-    
-    db.execute('''
-        INSERT INTO productos (nombre, descripcion, imagen, categoria_id, tipo, activo, orden, zone_id_required)
-        VALUES (?, ?, ?, ?, ?, 1, ?, ?)
-    ''', (nombre, descripcion, imagen_path, categoria_id, tipo, orden, zone_id_required))
-    
-    db.commit()
-    db.close()
-    
-    flash('Producto creado exitosamente', 'success')
-    return redirect(url_for('admin_productos'))
+    try:
+        logger.info("Iniciando creación de producto")
+        db = get_db()
+        
+        nombre = request.form.get('nombre')
+        descripcion = request.form.get('descripcion')
+        categoria_id = request.form.get('categoria_id')
+        tipo = request.form.get('tipo')  # juego o giftcard
+        orden = request.form.get('orden', 0)
+        zone_id_required = 1 if request.form.get('zone_id_required') else 0
+        
+        # Obtener imagen de galería
+        imagen_path = request.form.get('imagen_ruta')
+        
+        logger.info(f"Datos producto: nombre={nombre}, tipo={tipo}, imagen={imagen_path}")
+        
+        db.execute('''
+            INSERT INTO productos (nombre, descripcion, imagen, categoria_id, tipo, activo, orden, zone_id_required)
+            VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+        ''', (nombre, descripcion, imagen_path, categoria_id, tipo, orden, zone_id_required))
+        
+        db.commit()
+        db.close()
+        
+        logger.info("Producto creado exitosamente")
+        flash('Producto creado exitosamente', 'success')
+        return redirect(url_for('admin_productos'))
+    except Exception as e:
+        logger.error(f"Error creando producto: {str(e)}", exc_info=True)
+        flash(f'Error al crear producto: {str(e)}', 'danger')
+        return redirect(url_for('admin_productos'))
 
 @app.route('/admin/productos/<int:id>/datos', methods=['GET'])
 @admin_required
@@ -965,7 +974,9 @@ def admin_galeria_subir():
             
             try:
                 file.save(filepath)
-                ruta = f'uploads/galeria/{filename}'
+                # Guardar solo la ruta relativa (galeria/filename) para que funcione con /uploads/
+                ruta = f'galeria/{filename}'
+                logger.info(f"Imagen guardada en: {filepath}, ruta BD: {ruta}")
                 
                 # Nombre para la base de datos
                 nombre_display = f"{nombre_prefijo} {file.filename}" if nombre_prefijo else file.filename

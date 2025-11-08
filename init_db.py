@@ -164,7 +164,7 @@ def init_database():
         c.execute('''
             INSERT INTO configuracion (nombre_sitio, logo)
             VALUES (?, ?)
-        ''', ('Mi Tienda Online', 'uploads/logos/default-logo.png'))
+        ''', ('Mi Tienda Online', 'logos/default-logo.png'))
         print('[OK] Configuración inicial creada')
     except sqlite3.IntegrityError:
         print('[SKIP] Configuración ya existe')
