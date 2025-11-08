@@ -1,8 +1,11 @@
 import sqlite3
+import os
 from werkzeug.security import generate_password_hash
 
 def init_database():
-    conn = sqlite3.connect('tienda.db')
+    db_path = os.getenv('DATABASE_URL', 'tienda.db')
+    print(f'Inicializando base de datos en: {db_path}')
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     
     # Tabla de usuarios

@@ -1,7 +1,9 @@
 import sqlite3
+import os
 
 def migrar_imagenes_pago():
-    conn = sqlite3.connect('tienda.db')
+    db_path = os.getenv('DATABASE_URL', 'tienda.db')
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     
     print("Agregando columnas de imagenes de metodos de pago...")

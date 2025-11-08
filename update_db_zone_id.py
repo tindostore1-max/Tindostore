@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 import sqlite3
 import sys
+import os
 
 # Configurar encoding para Windows
 if sys.platform == 'win32':
     sys.stdout.reconfigure(encoding='utf-8')
 
 # Conectar a la base de datos
-conn = sqlite3.connect('tienda.db')
+db_path = os.getenv('DATABASE_URL', 'tienda.db')
+conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 try:
