@@ -552,6 +552,72 @@
             font-size: 0.8rem;
         }
         
+        /* Redes Sociales */
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        
+        .social-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            font-size: 1.4rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            border: 2px solid transparent;
+        }
+        
+        .social-btn:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+        
+        .social-btn.whatsapp {
+            background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+            color: white;
+        }
+        
+        .social-btn.whatsapp:hover {
+            border-color: #25D366;
+            box-shadow: 0 8px 16px rgba(37, 211, 102, 0.4);
+        }
+        
+        .social-btn.instagram {
+            background: linear-gradient(135deg, #E1306C 0%, #C13584 50%, #833AB4 100%);
+            color: white;
+        }
+        
+        .social-btn.instagram:hover {
+            border-color: #E1306C;
+            box-shadow: 0 8px 16px rgba(225, 48, 108, 0.4);
+        }
+        
+        .social-btn.facebook {
+            background: linear-gradient(135deg, #1877F2 0%, #0C63D4 100%);
+            color: white;
+        }
+        
+        .social-btn.facebook:hover {
+            border-color: #1877F2;
+            box-shadow: 0 8px 16px rgba(24, 119, 242, 0.4);
+        }
+        
+        .social-btn.tiktok {
+            background: linear-gradient(135deg, #000000 0%, #EE1D52 50%, #69C9D0 100%);
+            color: white;
+        }
+        
+        .social-btn.tiktok:hover {
+            border-color: #EE1D52;
+            box-shadow: 0 8px 16px rgba(238, 29, 82, 0.4);
+        }
+        
         .badge {
             background-color: #dc0000 !important;
             color: white !important;
@@ -1019,6 +1085,17 @@
             .footer-copyright {
                 font-size: 0.8rem !important;
             }
+            
+            /* Redes sociales centradas en móvil */
+            .social-links {
+                justify-content: center !important;
+            }
+            
+            .social-btn {
+                width: 40px !important;
+                height: 40px !important;
+                font-size: 1.2rem !important;
+            }
         }
     </style>
     {% block extra_css %}{% endblock %}
@@ -1133,6 +1210,23 @@
                             <i class="bi bi-file-text"></i> Términos y Condiciones
                         </a>
                     </div>
+                    
+                    <!-- Redes Sociales -->
+                    <div class="social-links mb-3">
+                        <a href="https://wa.me/message/FZU7XBF6EO2HG1" target="_blank" class="social-btn whatsapp" title="WhatsApp">
+                            <i class="bi bi-whatsapp"></i>
+                        </a>
+                        <a href="https://www.instagram.com/tindostoree?igsh=bTgzYjQ4NnhyZ2o3" target="_blank" class="social-btn instagram" title="Instagram">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                        <a href="https://www.facebook.com/share/1Lo9GMhojM/" target="_blank" class="social-btn facebook" title="Facebook">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="https://www.tiktok.com/@tindo.store" target="_blank" class="social-btn tiktok" title="TikTok">
+                            <i class="bi bi-tiktok"></i>
+                        </a>
+                    </div>
+                    
                     <p class="footer-copyright mb-0">
                         <i class="bi bi-c-circle"></i> 2024 {{ config.nombre_sitio if config else 'Tindo Store' }}
                         <br>
