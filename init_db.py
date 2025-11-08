@@ -42,8 +42,10 @@ def init_database():
             pagomovil_telefono TEXT DEFAULT '0424-0000000',
             pagomovil_cedula TEXT DEFAULT 'V-00000000',
             pagomovil_titular TEXT DEFAULT 'Titular',
+            pagomovil_imagen TEXT DEFAULT NULL,
             binance_correo TEXT DEFAULT 'ejemplo@correo.com',
-            binance_pay_id TEXT DEFAULT ''
+            binance_pay_id TEXT DEFAULT '',
+            binance_imagen TEXT DEFAULT NULL
         )
     ''')
     
@@ -70,6 +72,7 @@ def init_database():
             tipo TEXT DEFAULT 'juego',
             activo INTEGER DEFAULT 1,
             orden INTEGER DEFAULT 0,
+            zone_id_required INTEGER DEFAULT 0,
             fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (categoria_id) REFERENCES categorias (id)
         )
@@ -84,6 +87,8 @@ def init_database():
             nombre TEXT NOT NULL,
             descripcion TEXT,
             precio REAL NOT NULL,
+            imagen TEXT DEFAULT NULL,
+            zone_id_required INTEGER DEFAULT 0,
             FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE CASCADE
         )
     ''')
@@ -135,6 +140,7 @@ def init_database():
             producto_id INTEGER NOT NULL,
             paquete_id INTEGER NOT NULL,
             player_id TEXT,
+            zone_id TEXT DEFAULT NULL,
             metodo_pago TEXT NOT NULL,
             nombre TEXT NOT NULL,
             correo TEXT NOT NULL,

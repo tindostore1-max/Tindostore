@@ -84,8 +84,19 @@ def inicializar_sistema():
                 from init_db import init_database
                 init_database()
             else:
-                logger.info("Base de datos verificada correctamente")
-                conn.close()
+                # Verificar si necesita migraciones
+                cursor.execute("PRAGMA table_info(productos)")
+                columnas = [row[1] for row in cursor.fetchall()]
+                
+                if 'zone_id_required' not in columnas:
+                    logger.warning("Base de datos necesita migraciones. Ejecutando...")
+                    conn.close()
+                    from migrar_todas_columnas import migrar_todas_columnas
+                    migrar_todas_columnas()
+                    logger.info("Migraciones completadas")
+                else:
+                    logger.info("Base de datos verificada correctamente")
+                    conn.close()
                 
     except Exception as e:
         logger.error(f"Error verificando base de datos: {e}", exc_info=True)
