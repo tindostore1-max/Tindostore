@@ -23,28 +23,34 @@ def get_secret_key():
     """Obtener o generar SECRET_KEY persistente"""
     secret_key = os.getenv('SECRET_KEY')
     
-    if not secret_key:
-        # Intentar cargar desde archivo en disco persistente
-        secret_file = os.path.join(os.path.dirname(os.getenv('DATABASE_URL', 'tienda.db')), '.secret_key')
-        
-        try:
-            if os.path.exists(secret_file):
-                with open(secret_file, 'r') as f:
-                    secret_key = f.read().strip()
-                    logger.info("SECRET_KEY cargada desde archivo persistente")
-            else:
-                # Generar nueva SECRET_KEY
-                import secrets
-                secret_key = secrets.token_hex(32)
-                
-                # Guardar en disco persistente
-                os.makedirs(os.path.dirname(secret_file), exist_ok=True)
-                with open(secret_file, 'w') as f:
-                    f.write(secret_key)
-                logger.info("Nueva SECRET_KEY generada y guardada")
-        except Exception as e:
-            logger.warning(f"No se pudo persistir SECRET_KEY: {e}. Usando clave por defecto.")
-            secret_key = 'tu_clave_secreta_aqui_cambiala_' + secrets.token_hex(16)
+    if secret_key:
+        logger.info("SECRET_KEY cargada desde variable de entorno")
+        return secret_key
+    
+    # Determinar la ruta del archivo secret_key según el entorno
+    if os.path.exists('/data'):
+        secret_file = '/data/.secret_key'
+    else:
+        secret_file = '.secret_key'
+    
+    try:
+        if os.path.exists(secret_file):
+            with open(secret_file, 'r') as f:
+                secret_key = f.read().strip()
+                logger.info(f"SECRET_KEY cargada desde archivo: {secret_file}")
+        else:
+            # Generar nueva SECRET_KEY
+            secret_key = secrets.token_hex(32)
+            
+            # Guardar en disco persistente
+            with open(secret_file, 'w') as f:
+                f.write(secret_key)
+            logger.info(f"Nueva SECRET_KEY generada y guardada en: {secret_file}")
+    except Exception as e:
+        logger.error(f"Error manejando SECRET_KEY: {e}")
+        # Usar una clave temporal (no recomendado para producción)
+        secret_key = 'fallback_secret_key_' + secrets.token_hex(16)
+        logger.warning("Usando SECRET_KEY temporal. Configura SECRET_KEY en variables de entorno.")
     
     return secret_key
 
@@ -55,11 +61,24 @@ if os.path.exists('/data'):
     # Producción en Render con disco persistente
     app.config['UPLOAD_FOLDER'] = '/data/uploads'
     DATABASE_URL = '/data/tienda.db'
+    
+    # Configuración de sesiones para producción
+    app.config['SESSION_COOKIE_SECURE'] = True  # Cookies solo por HTTPS
+    app.config['SESSION_COOKIE_HTTPONLY'] = True  # No accesible desde JavaScript
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Protección CSRF
+    app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 horas
+    
     logger.info("Entorno de PRODUCCIÓN detectado (Render)")
 else:
     # Desarrollo local
     app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
     DATABASE_URL = os.getenv('DATABASE_URL', 'tienda.db')
+    
+    # Configuración de sesiones para desarrollo
+    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    
     logger.info("Entorno de DESARROLLO detectado (Local)")
 
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB max
@@ -179,6 +198,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
+            logger.warning(f"Acceso no autorizado a {f.__name__}: session vacía")
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -186,7 +206,12 @@ def login_required(f):
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if 'user_id' not in session or not session.get('is_admin'):
+        if 'user_id' not in session:
+            logger.warning(f"Acceso admin denegado a {f.__name__}: no hay user_id en session")
+            flash('Acceso denegado. Por favor inicia sesión.', 'danger')
+            return redirect(url_for('login'))
+        if not session.get('is_admin'):
+            logger.warning(f"Acceso admin denegado a {f.__name__}: user_id={session.get('user_id')} no es admin")
             flash('Acceso denegado', 'danger')
             return redirect(url_for('index'))
         return f(*args, **kwargs)
@@ -368,10 +393,12 @@ def login():
         
         # Verificar si es el administrador desde variables de entorno
         if username == ADMIN_EMAIL and password == ADMIN_PASSWORD:
+            session.permanent = True  # Mantener sesión activa
             session['user_id'] = 0  # ID especial para admin de entorno
             session['username'] = ADMIN_EMAIL
             session['is_admin'] = True
             session['is_env_admin'] = True
+            logger.info(f"Admin login exitoso: {ADMIN_EMAIL}")
             return redirect(url_for('admin_dashboard'))
         
         # Verificar usuarios en la base de datos
@@ -380,10 +407,12 @@ def login():
         db.close()
         
         if user and check_password_hash(user['password'], password):
+            session.permanent = True  # Mantener sesión activa
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['is_admin'] = user['is_admin']
             session['is_env_admin'] = False
+            logger.info(f"Usuario login exitoso: {user['username']}")
             
             if user['is_admin']:
                 return redirect(url_for('admin_dashboard'))
