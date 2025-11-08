@@ -8,6 +8,7 @@ import logging
 import secrets
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
+import email_service
 
 # Configurar logging
 logging.basicConfig(level=logging.INFO)
@@ -421,7 +422,52 @@ def confirmar_orden():
     
     db.commit()
     orden_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+    
+    # Obtener datos completos de la orden para el correo
+    producto = db.execute('SELECT * FROM productos WHERE id = ?', (checkout_data['producto_id'],)).fetchone()
+    paquete = db.execute('SELECT * FROM paquetes WHERE id = ?', (checkout_data['paquete_id'],)).fetchone()
+    
     db.close()
+    
+    # Preparar datos para los correos
+    orden_data = {
+        'orden_id': orden_id,
+        'fecha': datetime.now().strftime('%d de %B de %Y'),
+        'nombre': checkout_data['nombre'],
+        'correo': checkout_data['correo'],
+        'producto': producto['nombre'],
+        'paquete': paquete['nombre'],
+        'precio': f"{paquete['precio']:.2f}",
+        'player_id': checkout_data['player_id'],
+        'zone_id': checkout_data.get('zone_id', ''),
+        'metodo_pago': checkout_data['metodo_pago'],
+        'referencia': referencia
+    }
+    
+    # Enviar notificación al administrador
+    try:
+        admin_email = os.getenv('EMAIL_USER')
+        html_admin = email_service.generar_html_nueva_orden(orden_data)
+        email_service.enviar_correo(
+            admin_email,
+            f"🔔 Nueva Orden #{orden_id} - {producto['nombre']}",
+            html_admin
+        )
+        logger.info(f"Notificación de nueva orden enviada al admin")
+    except Exception as e:
+        logger.error(f"Error enviando notificación al admin: {e}")
+    
+    # Enviar confirmación al cliente
+    try:
+        html_cliente = email_service.generar_html_orden_creada(orden_data)
+        email_service.enviar_correo(
+            checkout_data['correo'],
+            f"✅ Orden #{orden_id} Recibida - Tindo Store",
+            html_cliente
+        )
+        logger.info(f"Confirmación de orden enviada al cliente: {checkout_data['correo']}")
+    except Exception as e:
+        logger.error(f"Error enviando confirmación al cliente: {e}")
     
     # Limpiar sesión
     session.pop('checkout_data', None)
@@ -812,7 +858,8 @@ def admin_paquetes_crear(producto_id):
     nombre = request.form.get('nombre')
     descripcion = request.form.get('descripcion', '')
     precio = float(request.form.get('precio'))
-    imagen_ruta = guardar_imagen(request.files.get('imagen'), 'galeria')
+    # Obtener imagen de galería seleccionada
+    imagen_ruta = request.form.get('imagen_ruta', None)
     zone_id_required = 1 if request.form.get('zone_id_required') else 0
     
     # Obtener el siguiente orden disponible
@@ -1299,9 +1346,45 @@ def admin_ordenes():
 @admin_required
 def admin_ordenes_cambiar_estado(id, estado):
     db = get_db()
+    
+    # Obtener datos de la orden antes de actualizar
+    orden = db.execute('''
+        SELECT o.*, p.nombre as producto_nombre, pk.nombre as paquete_nombre, pk.precio
+        FROM ordenes o
+        LEFT JOIN productos p ON o.producto_id = p.id
+        LEFT JOIN paquetes pk ON o.paquete_id = pk.id
+        WHERE o.id = ?
+    ''', (id,)).fetchone()
+    
+    # Actualizar estado
     db.execute('UPDATE ordenes SET estado = ? WHERE id = ?', (estado, id))
     db.commit()
     db.close()
+    
+    # Si el estado es "completada", enviar notificación al cliente
+    if estado == 'completada' and orden:
+        try:
+            orden_data = {
+                'orden_id': orden['id'],
+                'fecha': datetime.strptime(orden['fecha'], '%Y-%m-%d %H:%M:%S').strftime('%d de %B de %Y'),
+                'nombre': orden['nombre'],
+                'correo': orden['correo'],
+                'producto': orden['producto_nombre'],
+                'paquete': orden['paquete_nombre'],
+                'precio': f"{orden['precio']:.2f}",
+                'player_id': orden['player_id'],
+                'zone_id': orden.get('zone_id', '')
+            }
+            
+            html_completada = email_service.generar_html_orden_completada(orden_data)
+            email_service.enviar_correo(
+                orden['correo'],
+                f"🎉 Recarga Completada - Orden #{orden['id']} - Tindo Store",
+                html_completada
+            )
+            logger.info(f"Notificación de orden completada enviada a: {orden['correo']}")
+        except Exception as e:
+            logger.error(f"Error enviando notificación de orden completada: {e}")
     
     flash(f'Estado de orden cambiado a {estado}', 'success')
     return redirect(url_for('admin_ordenes'))

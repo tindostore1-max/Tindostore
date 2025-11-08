@@ -761,24 +761,26 @@
                 display: none !important;
             }
             
-            /* Mantener carrusel horizontal en móvil */
+            /* Mantener carrusel horizontal en móvil - AJUSTADO para mostrar 2 tarjetas por pantalla */
             #productsScroll,
             #giftcardsScroll {
                 display: flex !important;
-                gap: 0.75rem !important;
+                gap: 0.5rem !important;
                 overflow-x: auto !important;
                 scroll-behavior: smooth !important;
                 -webkit-overflow-scrolling: touch !important;
+                padding: 0 0.5rem !important;
             }
             
+            /* Tarjetas: calc para mostrar exactamente 2 por pantalla con gap */
             .product-card {
-                min-width: 180px !important;
-                max-width: 180px !important;
+                min-width: calc(50% - 0.25rem) !important;
+                max-width: calc(50% - 0.25rem) !important;
                 flex-shrink: 0 !important;
             }
             
             .product-card img {
-                height: 160px !important;
+                height: 140px !important;
             }
             
             .product-card .card-body {
@@ -786,15 +788,16 @@
             }
             
             .product-card .card-title {
-                font-size: 0.85rem !important;
+                font-size: 0.8rem !important;
                 margin-bottom: 0.3rem !important;
+                line-height: 1.2 !important;
             }
             
             .product-card .card-text {
                 font-size: 0.7rem !important;
             }
             
-            /* Tarjetas pequeñas más compactas en móvil */
+            /* Tarjetas pequeñas más compactas en móvil - mostrar 3 productos */
             .product-card-small {
                 border-radius: 8px !important;
                 min-width: 110px !important;
@@ -821,16 +824,19 @@
                 overflow-x: auto !important;
                 scroll-behavior: smooth !important;
                 -webkit-overflow-scrolling: touch !important;
+                padding: 0 0.5rem !important;
             }
             
             /* Ocultar scrollbar completamente pero mantener funcionalidad */
             #productsScroll::-webkit-scrollbar,
-            #giftcardsScroll::-webkit-scrollbar {
+            #giftcardsScroll::-webkit-scrollbar,
+            #bestSellersScroll::-webkit-scrollbar {
                 display: none;
             }
             
             #productsScroll,
-            #giftcardsScroll {
+            #giftcardsScroll,
+            #bestSellersScroll {
                 -ms-overflow-style: none;  /* IE y Edge */
                 scrollbar-width: none;  /* Firefox */
             }

@@ -1,0 +1,48 @@
+============================================================
+  INSTRUCCIONES PARA CONFIGURAR EL ARCHIVO .env
+============================================================
+
+PASO 1: Crea un archivo llamado ".env" en la raíz del proyecto
+        (c:\Users\user\Documents\Tindo\.env)
+
+PASO 2: Copia y pega el siguiente contenido en el archivo:
+
+-----------------------------------------------------------
+# Secret key para Flask
+SECRET_KEY=your_secret_key_here
+
+# Credenciales de administrador
+ADMIN_EMAIL=admin@tindo.com
+ADMIN_PASSWORD=Admin123!
+
+# Base de datos
+DATABASE_URL=tienda.db
+
+# Configuración de Flask
+FLASK_ENV=production
+DEBUG=False
+
+# Puerto
+PORT=5000
+
+# Configuración de archivos
+MAX_CONTENT_LENGTH=16777216
+UPLOAD_FOLDER=static/uploads
+
+# Configuración de correo para notificaciones
+EMAIL_USER=tindostore1@gmail.com
+EMAIL_PASSWORD=wmmxpdtjwifvcuhx
+-----------------------------------------------------------
+
+PASO 3: Guarda el archivo
+
+PASO 4: Reinicia el servidor Flask para que tome las nuevas variables
+
+============================================================
+
+IMPORTANTE: 
+- El archivo .env NO se sube a GitHub (está en .gitignore)
+- Mantén las credenciales seguras
+- La contraseña EMAIL_PASSWORD es una contraseña de aplicación de Gmail
+
+============================================================

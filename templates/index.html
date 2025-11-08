@@ -53,8 +53,8 @@
             </div>
         </div>
         
-        <div class="overflow-hidden">
-            <div id="bestSellersScroll" class="d-flex gap-2" style="overflow-x: auto; scroll-behavior: smooth;">
+        <div style="overflow: hidden; margin: 0 -0.5rem;">
+            <div id="bestSellersScroll" class="d-flex gap-2" style="overflow-x: auto; scroll-behavior: smooth; padding: 0 0.5rem; padding-bottom: 0.5rem;">
                 {% for producto in productos_mas_vendidos %}
                 <div class="card product-card-small flex-shrink-0" 
                      onclick="window.location.href='{{ url_for('producto_detalle', id=producto.id) }}'">
@@ -91,8 +91,8 @@
             </div>
         </div>
         
-        <div class="overflow-hidden">
-            <div id="productsScroll" class="d-flex gap-3" style="overflow-x: auto; scroll-behavior: smooth;">
+        <div style="overflow: hidden; margin: 0 -0.5rem;">
+            <div id="productsScroll" class="d-flex gap-3" style="overflow-x: auto; scroll-behavior: smooth; padding: 0 0.5rem;">
                 {% for producto in juegos %}
                 <div class="card product-card flex-shrink-0" style="min-width: 250px; max-width: 250px;" 
                      onclick="window.location.href='{{ url_for('producto_detalle', id=producto.id) }}'">
@@ -199,8 +199,8 @@
             </div>
         </div>
         
-        <div class="overflow-hidden">
-            <div id="giftcardsScroll" class="d-flex gap-3" style="overflow-x: auto; scroll-behavior: smooth;">
+        <div style="overflow: hidden; margin: 0 -0.5rem;">
+            <div id="giftcardsScroll" class="d-flex gap-3" style="overflow-x: auto; scroll-behavior: smooth; padding: 0 0.5rem;">
                 {% for producto in giftcards %}
                 <div class="card product-card flex-shrink-0" style="min-width: 250px; max-width: 250px;" 
                      onclick="window.location.href='{{ url_for('producto_detalle', id=producto.id) }}'">
