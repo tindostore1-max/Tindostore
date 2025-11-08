@@ -28,6 +28,33 @@ DATABASE_URL = os.getenv('DATABASE_URL', 'tienda.db')
 logger.info(f"DATABASE_URL configurado en: {DATABASE_URL}")
 logger.info(f"UPLOAD_FOLDER configurado en: {app.config['UPLOAD_FOLDER']}")
 
+# Verificar y crear base de datos si no existe
+def verificar_base_datos():
+    """Verificar que la base de datos tenga todas las tablas necesarias"""
+    try:
+        conn = sqlite3.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        
+        # Verificar si existe la tabla configuracion
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='configuracion'")
+        if not cursor.fetchone():
+            logger.warning("Base de datos no inicializada. Ejecutando init_db...")
+            conn.close()
+            # Importar y ejecutar init_database
+            from init_db import init_database
+            init_database()
+            logger.info("Base de datos inicializada correctamente")
+        else:
+            logger.info("Base de datos verificada correctamente")
+        
+        conn.close()
+    except Exception as e:
+        logger.error(f"Error verificando base de datos: {e}")
+        raise
+
+# Verificar base de datos al iniciar
+verificar_base_datos()
+
 # Asegurar que existe la carpeta de uploads
 upload_folder = app.config['UPLOAD_FOLDER']
 os.makedirs(upload_folder, exist_ok=True)
@@ -79,9 +106,26 @@ def index():
         
         # Obtener configuración del sitio
         logger.info("Consultando tabla configuracion")
-        config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
-        if not config:
-            logger.warning("No se encontró configuración con id=1")
+        try:
+            config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+            if not config:
+                logger.warning("No se encontró configuración con id=1, creando por defecto")
+                # Crear configuración por defecto
+                db.execute('''
+                    INSERT INTO configuracion (nombre_sitio, logo)
+                    VALUES (?, ?)
+                ''', ('Mi Tienda Online', 'uploads/logos/default-logo.png'))
+                db.commit()
+                config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+        except sqlite3.OperationalError as e:
+            logger.error(f"Error en tabla configuracion: {e}")
+            # Si la tabla no existe, reinicializar base de datos
+            logger.warning("Reinicializando base de datos...")
+            db.close()
+            from init_db import init_database
+            init_database()
+            db = get_db()
+            config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
         
         # Obtener banners activos
         logger.info("Consultando tabla banners")
@@ -116,7 +160,7 @@ def index():
                              categorias=categorias)
     except Exception as e:
         logger.error(f"Error en ruta /: {str(e)}", exc_info=True)
-        return f"Error al cargar la página: {str(e)}", 500
+        return f"Error al cargar la página: {str(e)}<br><br>DATABASE_URL: {DATABASE_URL}<br>Revisa los logs para más información.", 500
 
 @app.route('/producto/<int:id>')
 def producto_detalle(id):
