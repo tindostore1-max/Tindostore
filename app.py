@@ -171,6 +171,27 @@ def inicializar_sistema():
                     conn.commit()
                     logger.info("Columna 'orden' agregada exitosamente")
                 
+                # Asignar órdenes a paquetes sin orden
+                cursor.execute("SELECT COUNT(*) FROM paquetes WHERE orden IS NULL")
+                paquetes_sin_orden = cursor.fetchone()[0]
+                
+                if paquetes_sin_orden > 0:
+                    logger.warning(f"Asignando órdenes a {paquetes_sin_orden} paquetes...")
+                    productos = cursor.execute('SELECT id FROM productos').fetchall()
+                    for producto in productos:
+                        cursor.execute('''
+                            UPDATE paquetes 
+                            SET orden = (
+                                SELECT COUNT(*) 
+                                FROM paquetes p2 
+                                WHERE p2.producto_id = paquetes.producto_id 
+                                AND p2.id <= paquetes.id
+                            ) 
+                            WHERE producto_id = ? AND orden IS NULL
+                        ''', (producto[0],))
+                    conn.commit()
+                    logger.info("Órdenes asignados exitosamente")
+                
                 # Migrar rutas de imágenes si es necesario
                 cursor.execute("SELECT logo FROM configuracion WHERE logo LIKE 'uploads/%' LIMIT 1")
                 if cursor.fetchone():
