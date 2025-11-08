@@ -6,7 +6,7 @@ import sqlite3
 import os
 import logging
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # Configurar logging
@@ -56,17 +56,21 @@ def get_secret_key():
 
 app.secret_key = get_secret_key()
 
+# Configuración de sesiones (común para todos los entornos)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # 24 horas
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 # Detectar entorno de producción y usar ruta absoluta
 if os.path.exists('/data'):
     # Producción en Render con disco persistente
     app.config['UPLOAD_FOLDER'] = '/data/uploads'
     DATABASE_URL = '/data/tienda.db'
     
-    # Configuración de sesiones para producción
-    app.config['SESSION_COOKIE_SECURE'] = True  # Cookies solo por HTTPS
-    app.config['SESSION_COOKIE_HTTPONLY'] = True  # No accesible desde JavaScript
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Protección CSRF
-    app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 horas
+    # Configuración específica de producción
+    # SESSION_COOKIE_SECURE = False temporalmente para debugging
+    # Cambiar a True después de verificar que funciona
+    app.config['SESSION_COOKIE_SECURE'] = False
     
     logger.info("Entorno de PRODUCCIÓN detectado (Render)")
 else:
@@ -74,10 +78,8 @@ else:
     app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
     DATABASE_URL = os.getenv('DATABASE_URL', 'tienda.db')
     
-    # Configuración de sesiones para desarrollo
+    # Configuración específica de desarrollo
     app.config['SESSION_COOKIE_SECURE'] = False
-    app.config['SESSION_COOKIE_HTTPONLY'] = True
-    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     
     logger.info("Entorno de DESARROLLO detectado (Local)")
 
@@ -221,6 +223,7 @@ def admin_required(f):
 
 @app.route('/')
 def index():
+    logger.info(f"→ Cargando index: session tiene user_id={session.get('user_id')}, is_admin={session.get('is_admin')}")
     try:
         db = get_db()
         
@@ -398,7 +401,8 @@ def login():
             session['username'] = ADMIN_EMAIL
             session['is_admin'] = True
             session['is_env_admin'] = True
-            logger.info(f"Admin login exitoso: {ADMIN_EMAIL}")
+            logger.info(f"✓ Admin login exitoso: {ADMIN_EMAIL}")
+            logger.info(f"✓ Sesión configurada: user_id={session.get('user_id')}, is_admin={session.get('is_admin')}, permanent={session.permanent}")
             return redirect(url_for('admin_dashboard'))
         
         # Verificar usuarios en la base de datos
@@ -516,6 +520,8 @@ def actualizar_perfil():
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
+    logger.info(f"✓ Acceso a admin_dashboard: user_id={session.get('user_id')}, is_admin={session.get('is_admin')}, username={session.get('username')}")
+    
     db = get_db()
     
     # Estadísticas
