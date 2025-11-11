@@ -1554,27 +1554,48 @@ def admin_ordenes_cambiar_estado(id, estado):
 @app.route('/admin/afiliados')
 @admin_required
 def admin_afiliados():
-    db = get_db()
-    # Obtener todos los afiliados
-    afiliados_raw = db.execute('''
-        SELECT * FROM afiliados ORDER BY fecha_registro DESC
-    ''').fetchall()
+    try:
+        db = get_db()
+        
+        # Verificar si la tabla afiliados existe
+        cursor = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='afiliados'")
+        if not cursor.fetchone():
+            logger.error("Tabla 'afiliados' no existe")
+            flash('Error: La tabla de afiliados no existe en la base de datos', 'danger')
+            db.close()
+            return redirect(url_for('admin_dashboard'))
+        
+        # Obtener todos los afiliados de forma segura
+        afiliados_raw = db.execute('''
+            SELECT * FROM afiliados ORDER BY id DESC
+        ''').fetchall()
+        
+        # Convertir a lista de diccionarios y agregar conteo de comisiones
+        afiliados = []
+        for afiliado in afiliados_raw:
+            afiliado_dict = dict(afiliado)
+            # Contar comisiones para este afiliado
+            try:
+                total_comisiones = db.execute('''
+                    SELECT COUNT(*) as total FROM comisiones_afiliados WHERE afiliado_id = ?
+                ''', (afiliado['id'],)).fetchone()['total']
+            except:
+                total_comisiones = 0
+            
+            afiliado_dict['total_comisiones'] = total_comisiones
+            afiliados.append(afiliado_dict)
+        
+        config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+        db.close()
+        
+        return render_template('admin/afiliados.html', afiliados=afiliados, config=config)
     
-    # Convertir a lista de diccionarios y agregar conteo de comisiones
-    afiliados = []
-    for afiliado in afiliados_raw:
-        afiliado_dict = dict(afiliado)
-        # Contar comisiones para este afiliado
-        total_comisiones = db.execute('''
-            SELECT COUNT(*) as total FROM comisiones_afiliados WHERE afiliado_id = ?
-        ''', (afiliado['id'],)).fetchone()['total']
-        afiliado_dict['total_comisiones'] = total_comisiones
-        afiliados.append(afiliado_dict)
-    
-    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
-    db.close()
-    
-    return render_template('admin/afiliados.html', afiliados=afiliados, config=config)
+    except Exception as e:
+        logger.error(f"Error en admin_afiliados: {str(e)}", exc_info=True)
+        if 'db' in locals():
+            db.close()
+        flash(f'Error al cargar afiliados: {str(e)}', 'danger')
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/afiliados/crear', methods=['POST'])
 @admin_required
