@@ -335,6 +335,14 @@ def producto_detalle(id):
     # Obtener paquetes del producto ordenados por campo orden
     paquetes = db.execute('SELECT * FROM paquetes WHERE producto_id = ? ORDER BY COALESCE(orden, 999), precio', (id,)).fetchall()
     
+    # Obtener productos relacionados (mismo tipo, excluyendo el actual, máximo 4)
+    productos_relacionados = db.execute('''
+        SELECT * FROM productos 
+        WHERE tipo = ? AND id != ? AND activo = 1 
+        ORDER BY RANDOM() 
+        LIMIT 4
+    ''', (producto['tipo'], id)).fetchall()
+    
     config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
     
     db.close()
@@ -342,6 +350,7 @@ def producto_detalle(id):
     return render_template('producto_detalle.html', 
                          producto=producto, 
                          paquetes=paquetes,
+                         productos_relacionados=productos_relacionados,
                          config=config)
 
 @app.route('/api/validar_afiliado', methods=['POST'])

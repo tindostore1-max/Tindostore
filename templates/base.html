@@ -753,6 +753,13 @@
             body {
                 padding-top: 0 !important;
                 margin-top: 0 !important;
+                overflow-x: hidden !important;
+            }
+            
+            /* HTML y body al 100% del ancho */
+            html, body {
+                width: 100% !important;
+                max-width: 100vw !important;
             }
             
             /* Navbar sin padding inferior */
@@ -761,10 +768,14 @@
                 margin-bottom: 0 !important;
             }
             
-            /* Container pegado al navbar */
-            .container {
+            /* Container y container-fluid al 100% en móvil */
+            .container, .container-fluid {
                 margin-top: 0 !important;
                 padding-top: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
             }
             
             /* Carrusel pegado */

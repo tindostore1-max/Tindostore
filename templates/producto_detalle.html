@@ -226,6 +226,43 @@
             </form>
         </div>
     </div>
+
+    <!-- Sección de Productos Relacionados -->
+    {% if productos_relacionados %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 class="fw-bold mb-4">
+                <i class="bi bi-{% if producto.tipo == 'juego' %}controller{% else %}gift{% endif %}"></i> 
+                {% if producto.tipo == 'juego' %}Juegos Relacionados{% else %}Gift Cards Relacionadas{% endif %}
+            </h3>
+            
+            <!-- Grid responsivo: 4 columnas en PC, 2 columnas en móvil -->
+            <div class="row g-3 related-products-grid">
+                {% for producto_rel in productos_relacionados %}
+                <div class="col-6 col-md-3">
+                    <div class="card related-product-card" onclick="window.location.href='{{ url_for('producto_detalle', id=producto_rel.id) }}'">
+                        {% if producto_rel.imagen %}
+                        <img src="/uploads/{{ producto_rel.imagen }}" class="card-img-top" alt="{{ producto_rel.nombre }}">
+                        {% else %}
+                        <div class="bg-secondary" style="height: 180px;"></div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h6 class="card-title mb-2">{{ producto_rel.nombre }}</h6>
+                            <span class="badge {% if producto_rel.tipo == 'juego' %}bg-primary{% else %}bg-success{% endif %}">
+                                {% if producto_rel.tipo == 'juego' %}
+                                <i class="bi bi-controller"></i> Juego
+                                {% else %}
+                                <i class="bi bi-gift"></i> Gift Card
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Footer Flotante para Móvil -->
@@ -376,6 +413,20 @@
 
 /* Estilos responsivos para móviles */
 @media (max-width: 768px) {
+    /* Asegurar que todo el contenido esté al 100% en móvil */
+    .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    
+    .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+    }
+    
     /* FORZAR 2 COLUMNAS EN MÓVIL - MUY IMPORTANTE */
     #paquetesContainer .paquete-item,
     #paquetesContainer .col-6,
@@ -618,6 +669,98 @@
 @media (max-width: 768px) {
     .mobile-footer {
         display: block;
+    }
+}
+
+/* Estilos para productos relacionados */
+.related-product-card {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 1px solid rgba(100, 100, 100, 0.3) !important;
+    background-color: rgba(42, 42, 42, 0.6) !important;
+    border-radius: 12px !important;
+    overflow: hidden;
+    height: 100%;
+}
+
+.related-product-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(150, 150, 150, 0.5) !important;
+    box-shadow: 0 4px 16px rgba(220, 0, 0, 0.3) !important;
+}
+
+.related-product-card img {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.related-product-card .card-body {
+    padding: 1rem;
+    text-align: center;
+}
+
+.related-product-card .card-title {
+    color: white !important;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* Estilos responsivos para productos relacionados en móvil */
+@media (max-width: 768px) {
+    .related-product-card img {
+        height: 140px;
+    }
+    
+    .related-product-card .card-body {
+        padding: 0.5rem;
+    }
+    
+    .related-product-card .card-title {
+        font-size: 0.75rem;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        min-height: 2.4em;
+    }
+    
+    .related-product-card .badge {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.4rem;
+    }
+    
+    /* Ajustar grid de productos relacionados en móvil - FORZAR 2 COLUMNAS */
+    .related-products-grid {
+        gap: 0.5rem !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .related-products-grid .col-6 {
+        flex: 0 0 calc(50% - 0.25rem) !important;
+        max-width: calc(50% - 0.25rem) !important;
+        padding-left: 0.25rem !important;
+        padding-right: 0.25rem !important;
+    }
+    
+    /* Asegurar que se muestren máximo 2 por fila */
+    .related-products-grid .col-6:nth-child(2n+1) {
+        padding-left: 0 !important;
+    }
+    
+    .related-products-grid .col-6:nth-child(2n) {
+        padding-right: 0 !important;
+    }
+    
+    /* Título más pequeño en móvil */
+    .mt-5 h3 {
+        font-size: 1.2rem !important;
+        margin-bottom: 1rem !important;
     }
 }
 </style>
