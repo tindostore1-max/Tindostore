@@ -714,6 +714,13 @@
 
 /* Estilos responsivos para productos relacionados en móvil */
 @media (max-width: 768px) {
+    /* Asegurar que la sección de productos relacionados sea visible */
+    .mt-5 {
+        display: block !important;
+        visibility: visible !important;
+        margin-top: 2rem !important;
+    }
+    
     .related-product-card img {
         height: 160px;
         object-fit: cover;
@@ -739,17 +746,17 @@
     
     /* FORZAR 2 COLUMNAS POR FILA EN MÓVIL CON MEJOR SPACING */
     .related-products-grid {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
         gap: 1rem !important;
         margin: 0 !important;
         padding: 0 0.5rem !important;
     }
     
-    .related-products-grid > * {
-        width: 100% !important;
-        max-width: 100% !important;
-        flex: none !important;
+    .related-products-grid > .col-6 {
+        width: calc(50% - 0.5rem) !important;
+        max-width: calc(50% - 0.5rem) !important;
+        flex: 0 0 calc(50% - 0.5rem) !important;
         padding: 0 !important;
     }
     
@@ -757,6 +764,8 @@
         border-radius: 12px !important;
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+        display: block !important;
+        visibility: visible !important;
     }
     
     /* Título más pequeño en móvil */

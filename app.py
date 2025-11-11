@@ -1557,13 +1557,36 @@ def admin_afiliados():
     try:
         db = get_db()
         
-        # Verificar si la tabla afiliados existe
-        cursor = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='afiliados'")
-        if not cursor.fetchone():
-            logger.error("Tabla 'afiliados' no existe")
-            flash('Error: La tabla de afiliados no existe en la base de datos', 'danger')
-            db.close()
-            return redirect(url_for('admin_dashboard'))
+        # Crear tabla afiliados si no existe
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS afiliados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT NOT NULL,
+                correo TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                codigo_afiliado TEXT UNIQUE NOT NULL,
+                descuento_porcentaje REAL DEFAULT 10.0,
+                saldo_acumulado REAL DEFAULT 0.0,
+                activo INTEGER DEFAULT 1,
+                fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Crear tabla comisiones_afiliados si no existe
+        db.execute('''
+            CREATE TABLE IF NOT EXISTS comisiones_afiliados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                afiliado_id INTEGER NOT NULL,
+                orden_id INTEGER NOT NULL,
+                monto_orden REAL NOT NULL,
+                porcentaje_comision REAL NOT NULL,
+                monto_comision REAL NOT NULL,
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (afiliado_id) REFERENCES afiliados(id),
+                FOREIGN KEY (orden_id) REFERENCES ordenes(id)
+            )
+        ''')
+        db.commit()
         
         # Obtener todos los afiliados de forma segura
         afiliados_raw = db.execute('''
