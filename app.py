@@ -1555,13 +1555,22 @@ def admin_ordenes_cambiar_estado(id, estado):
 @admin_required
 def admin_afiliados():
     db = get_db()
-    afiliados = db.execute('''
-        SELECT a.*, COUNT(c.id) as total_comisiones
-        FROM afiliados a
-        LEFT JOIN comisiones_afiliados c ON a.id = c.afiliado_id
-        GROUP BY a.id
-        ORDER BY a.fecha_registro DESC
+    # Obtener todos los afiliados
+    afiliados_raw = db.execute('''
+        SELECT * FROM afiliados ORDER BY fecha_registro DESC
     ''').fetchall()
+    
+    # Convertir a lista de diccionarios y agregar conteo de comisiones
+    afiliados = []
+    for afiliado in afiliados_raw:
+        afiliado_dict = dict(afiliado)
+        # Contar comisiones para este afiliado
+        total_comisiones = db.execute('''
+            SELECT COUNT(*) as total FROM comisiones_afiliados WHERE afiliado_id = ?
+        ''', (afiliado['id'],)).fetchone()['total']
+        afiliado_dict['total_comisiones'] = total_comisiones
+        afiliados.append(afiliado_dict)
+    
     config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
     db.close()
     
