@@ -715,7 +715,7 @@
 /* Estilos responsivos para productos relacionados en móvil */
 @media (max-width: 768px) {
     .related-product-card img {
-        height: 140px;
+        height: 120px;
     }
     
     .related-product-card .card-body {
@@ -723,38 +723,30 @@
     }
     
     .related-product-card .card-title {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         -webkit-line-clamp: 2;
         line-clamp: 2;
-        min-height: 2.4em;
+        min-height: 2em;
     }
     
     .related-product-card .badge {
-        font-size: 0.65rem;
-        padding: 0.25rem 0.4rem;
+        font-size: 0.6rem;
+        padding: 0.2rem 0.4rem;
     }
     
-    /* Ajustar grid de productos relacionados en móvil - FORZAR 2 COLUMNAS */
+    /* FORZAR 2 COLUMNAS POR FILA EN MÓVIL */
     .related-products-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 0.5rem !important;
-        display: flex !important;
-        flex-wrap: wrap !important;
+        margin: 0 !important;
     }
     
-    .related-products-grid .col-6 {
-        flex: 0 0 calc(50% - 0.25rem) !important;
-        max-width: calc(50% - 0.25rem) !important;
-        padding-left: 0.25rem !important;
-        padding-right: 0.25rem !important;
-    }
-    
-    /* Asegurar que se muestren máximo 2 por fila */
-    .related-products-grid .col-6:nth-child(2n+1) {
-        padding-left: 0 !important;
-    }
-    
-    .related-products-grid .col-6:nth-child(2n) {
-        padding-right: 0 !important;
+    .related-products-grid > * {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: none !important;
+        padding: 0 !important;
     }
     
     /* Título más pequeño en móvil */
@@ -872,11 +864,25 @@ function actualizarResumen() {
             metodoEl.textContent = 'Selecciona un método de pago';
         }
         
-        // Actualizar y mostrar footer móvil - siempre en Bs por defecto
-        const precioBsMovil = (precioFinal * tasaCambio).toFixed(2);
-        mobilePackagePrice.innerHTML = afiliadoValidado ? 
-            `${precioBsMovil} Bs${descuentoTexto}` : 
-            (metodoSeleccionado === 'pagomovil' ? `${precioBsMovil} Bs` : `${precioBsMovil} Bs`);
+        // Actualizar y mostrar footer móvil según método de pago
+        if (metodoSeleccionado === 'binance') {
+            // Mostrar en USD para Binance
+            if (afiliadoValidado) {
+                mobilePackagePrice.innerHTML = `<span style="text-decoration: line-through; color: #999;">$${paqueteSeleccionado.precio.toFixed(2)}</span> $${precioFinal.toFixed(2)} USD${descuentoTexto}`;
+            } else {
+                mobilePackagePrice.innerHTML = `$${precioFinal.toFixed(2)} USD`;
+            }
+        } else {
+            // Mostrar en Bs para Pago Móvil o sin método seleccionado
+            const precioBsMovil = (precioFinal * tasaCambio).toFixed(2);
+            const precioOriginalBsMovil = (paqueteSeleccionado.precio * tasaCambio).toFixed(2);
+            
+            if (afiliadoValidado) {
+                mobilePackagePrice.innerHTML = `<span style="text-decoration: line-through; color: #999;">${precioOriginalBsMovil} Bs</span> ${precioBsMovil} Bs${descuentoTexto}`;
+            } else {
+                mobilePackagePrice.innerHTML = `${precioBsMovil} Bs`;
+            }
+        }
         
         // Mostrar footer móvil solo en pantallas pequeñas
         if (window.innerWidth <= 768) {
