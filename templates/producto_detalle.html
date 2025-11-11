@@ -714,65 +714,9 @@
 
 /* Estilos responsivos para productos relacionados en móvil */
 @media (max-width: 768px) {
-    /* Asegurar que la sección de productos relacionados sea visible */
+    /* Ocultar productos relacionados en móvil */
     .mt-5 {
-        display: block !important;
-        visibility: visible !important;
-        margin-top: 2rem !important;
-    }
-    
-    .related-product-card img {
-        height: 160px;
-        object-fit: cover;
-    }
-    
-    .related-product-card .card-body {
-        padding: 0.75rem;
-        background-color: rgba(42, 42, 42, 0.6) !important;
-    }
-    
-    .related-product-card .card-title {
-        font-size: 0.85rem;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        min-height: 2.4em;
-        font-weight: 600;
-    }
-    
-    .related-product-card .badge {
-        font-size: 0.7rem;
-        padding: 0.3rem 0.6rem;
-    }
-    
-    /* FORZAR 2 COLUMNAS POR FILA EN MÓVIL CON MEJOR SPACING */
-    .related-products-grid {
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 1rem !important;
-        margin: 0 !important;
-        padding: 0 0.5rem !important;
-    }
-    
-    .related-products-grid > .col-6 {
-        width: calc(50% - 0.5rem) !important;
-        max-width: calc(50% - 0.5rem) !important;
-        flex: 0 0 calc(50% - 0.5rem) !important;
-        padding: 0 !important;
-    }
-    
-    .related-product-card {
-        border-radius: 12px !important;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-        display: block !important;
-        visibility: visible !important;
-    }
-    
-    /* Título más pequeño en móvil */
-    .mt-5 h3 {
-        font-size: 1.25rem !important;
-        margin-bottom: 1.25rem !important;
-        padding: 0 0.5rem !important;
+        display: none !important;
     }
 }
 </style>

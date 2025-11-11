@@ -464,6 +464,23 @@ def confirmar_orden():
     
     db = get_db()
     
+    # Verificar y agregar columnas de afiliados si no existen
+    try:
+        cursor = db.execute("PRAGMA table_info(ordenes)")
+        columnas_existentes = [col[1] for col in cursor.fetchall()]
+        
+        if 'afiliado_id' not in columnas_existentes:
+            logger.info("Agregando columnas de afiliados a tabla ordenes...")
+            db.execute("ALTER TABLE ordenes ADD COLUMN afiliado_id INTEGER")
+            db.execute("ALTER TABLE ordenes ADD COLUMN codigo_afiliado TEXT")
+            db.execute("ALTER TABLE ordenes ADD COLUMN descuento_aplicado REAL DEFAULT 0")
+            db.execute("ALTER TABLE ordenes ADD COLUMN precio_original REAL")
+            db.execute("ALTER TABLE ordenes ADD COLUMN precio_final REAL")
+            db.commit()
+            logger.info("Columnas agregadas exitosamente")
+    except Exception as e:
+        logger.error(f"Error verificando columnas: {e}")
+    
     # Obtener datos del paquete para calcular precios
     paquete = db.execute('SELECT * FROM paquetes WHERE id = ?', (checkout_data['paquete_id'],)).fetchone()
     precio_original = paquete['precio']
