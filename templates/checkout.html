@@ -179,13 +179,31 @@
         <div class="col-md-8">
             <!-- Banner Total -->
             <div class="checkout-total-banner">
-                <h3>Total a pagar: 
-                    {% if config and config.tasa_cambio %}
-                        Bs.$ {{ "%.2f"|format(paquete.precio * config.tasa_cambio) }}
+                {% if descuento_porcentaje > 0 %}
+                <div class="mb-2">
+                    <span class="badge bg-success" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                        <i class="bi bi-gift"></i> {{ descuento_porcentaje }}% de descuento aplicado
+                    </span>
+                </div>
+                <p class="mb-2" style="text-decoration: line-through; font-size: 1.2rem; opacity: 0.7;">
+                    Precio original: 
+                    {% if checkout_data.metodo_pago == 'pagomovil' and config and config.tasa_cambio %}
+                        Bs {{ "%.2f"|format(precio_original * config.tasa_cambio) }}
                     {% else %}
-                        ${{ paquete.precio }} USD
+                        ${{ "%.2f"|format(precio_original) }} USD
+                    {% endif %}
+                </p>
+                {% endif %}
+                <h3>Total a pagar: 
+                    {% if checkout_data.metodo_pago == 'pagomovil' and config and config.tasa_cambio %}
+                        Bs {{ "%.2f"|format(precio_final * config.tasa_cambio) }}
+                    {% else %}
+                        ${{ "%.2f"|format(precio_final) }} USD
                     {% endif %}
                 </h3>
+                {% if afiliado_nombre %}
+                <small class="text-white-50">Gracias por usar el código de {{ afiliado_nombre }}</small>
+                {% endif %}
             </div>
             <!-- Información de Pago -->
             <div class="payment-info-section">

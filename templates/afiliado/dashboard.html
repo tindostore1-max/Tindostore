@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2><i class="bi bi-person-badge"></i> Panel de Afiliado</h2>
+                    <p class="text-muted mb-0">Bienvenido, {{ afiliado.nombre }}</p>
+                </div>
+                <a href="{{ url_for('afiliado_logout') }}" class="btn btn-outline-danger">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Afiliado -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-info-circle"></i> Tu Información</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Código de Afiliado:</strong></p>
+                            <h3 class="text-primary"><code>{{ afiliado.codigo_afiliado }}</code></h3>
+                            <small class="text-muted">Comparte este código con tus referidos</small>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Descuento para Clientes:</strong></p>
+                            <h3 class="text-success">{{ afiliado.descuento_porcentaje }}%</h3>
+                            <small class="text-muted">Descuento que recibirán tus referidos</small>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Tu Comisión:</strong></p>
+                            <h3 class="text-info">{{ afiliado.descuento_porcentaje }}%</h3>
+                            <small class="text-muted">Por cada venta referida</small>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-1"><strong>Correo:</strong></p>
+                            <p class="mb-0">{{ afiliado.correo }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Saldo Acumulado</h6>
+                            <h2 class="mb-0">${{ "%.2f"|format(afiliado.saldo_acumulado) }}</h2>
+                        </div>
+                        <i class="bi bi-wallet2" style="font-size: 3rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Este Mes</h6>
+                            <h2 class="mb-0">${{ "%.2f"|format(comisiones_mes) }}</h2>
+                        </div>
+                        <i class="bi bi-calendar-check" style="font-size: 3rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">Total Comisiones</h6>
+                            <h2 class="mb-0">{{ total_comisiones }}</h2>
+                        </div>
+                        <i class="bi bi-graph-up-arrow" style="font-size: 3rem; opacity: 0.5;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimas Comisiones -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-cash-stack"></i> Últimas Comisiones</h5>
+                </div>
+                <div class="card-body">
+                    {% if comisiones %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Orden</th>
+                                    <th>Cliente</th>
+                                    <th>Producto</th>
+                                    <th>Monto Orden</th>
+                                    <th>% Comisión</th>
+                                    <th>Tu Ganancia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for comision in comisiones %}
+                                <tr>
+                                    <td>{{ comision.fecha[:10] }}</td>
+                                    <td>#{{ comision.orden_id }}</td>
+                                    <td>{{ comision.cliente_nombre }}</td>
+                                    <td>
+                                        {{ comision.producto_nombre }}
+                                        <br><small class="text-muted">{{ comision.paquete_nombre }}</small>
+                                    </td>
+                                    <td>${{ "%.2f"|format(comision.monto_orden) }}</td>
+                                    <td>{{ comision.porcentaje_comision }}%</td>
+                                    <td class="text-success fw-bold">${{ "%.2f"|format(comision.monto_comision) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Aún no tienes comisiones. ¡Comienza a compartir tu código de afiliado!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instrucciones -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-lightbulb"></i> Cómo Funciona</h5>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li class="mb-2"><strong>Comparte tu código:</strong> Proporciona tu código <code>{{ afiliado.codigo_afiliado }}</code> a tus amigos y contactos</li>
+                        <li class="mb-2"><strong>Ellos compran con descuento:</strong> Cuando usen tu código, obtendrán {{ afiliado.descuento_porcentaje }}% de descuento en su compra</li>
+                        <li class="mb-2"><strong>Tú ganas comisión:</strong> Por cada compra realizada con tu código, recibirás {{ afiliado.descuento_porcentaje }}% del valor de la orden</li>
+                        <li><strong>Acumula ganancias:</strong> Tu saldo se acumula automáticamente y puedes verlo en tiempo real aquí</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

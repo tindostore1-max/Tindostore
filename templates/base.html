@@ -693,6 +693,60 @@
             border-color: #ffc107 !important;
         }
         
+        /* Estilos para Desktop - PC */
+        @media (min-width: 992px) {
+            /* Asegurar que el contenido use el ancho completo en PC */
+            .container-fluid {
+                max-width: 100% !important;
+                padding-left: 3rem !important;
+                padding-right: 3rem !important;
+            }
+            
+            /* Banners a pantalla completa en PC */
+            #mainCarousel,
+            #bannersIntermediosCarousel {
+                width: 100vw !important;
+                margin-left: calc(-50vw + 50%) !important;
+                margin-right: calc(-50vw + 50%) !important;
+            }
+            
+            /* Carruseles de productos más visibles en PC */
+            .product-card {
+                min-width: 280px !important;
+                max-width: 280px !important;
+            }
+            
+            .product-card img {
+                height: 300px !important;
+            }
+            
+            /* Más vendidos con mejor tamaño en PC */
+            .product-card-small {
+                min-width: 180px !important;
+                max-width: 180px !important;
+            }
+            
+            .product-card-small img {
+                height: 160px !important;
+            }
+            
+            /* Secciones con mejor espaciado */
+            section {
+                margin-bottom: 3rem !important;
+            }
+            
+            /* Títulos más grandes en PC */
+            h2 {
+                font-size: 2rem !important;
+            }
+            
+            /* Grid de categorías en 4 columnas */
+            .row.g-3 .col-md-3 {
+                flex: 0 0 25% !important;
+                max-width: 25% !important;
+            }
+        }
+        
         /* Estilos Responsivos para Móviles */
         @media (max-width: 768px) {
             /* Eliminar todo el espacio superior del body */

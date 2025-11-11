@@ -344,6 +344,37 @@ def producto_detalle(id):
                          paquetes=paquetes,
                          config=config)
 
+@app.route('/api/validar_afiliado', methods=['POST'])
+def validar_afiliado():
+    """API para validar código de afiliado"""
+    try:
+        data = request.get_json()
+        codigo = data.get('codigo', '').strip().upper()
+        
+        if not codigo:
+            return jsonify({'valido': False})
+        
+        db = get_db()
+        afiliado = db.execute('''
+            SELECT id, nombre, descuento_porcentaje, activo
+            FROM afiliados 
+            WHERE UPPER(codigo_afiliado) = ? AND activo = 1
+        ''', (codigo,)).fetchone()
+        db.close()
+        
+        if afiliado:
+            return jsonify({
+                'valido': True,
+                'afiliado_id': afiliado['id'],
+                'nombre': afiliado['nombre'],
+                'descuento': afiliado['descuento_porcentaje']
+            })
+        else:
+            return jsonify({'valido': False})
+    except Exception as e:
+        logger.error(f"Error validando afiliado: {e}")
+        return jsonify({'valido': False})
+
 @app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
     if request.method == 'POST':
@@ -357,6 +388,7 @@ def checkout():
         metodo_pago = request.form.get('metodo_pago')
         nombre = request.form.get('nombre')
         correo = request.form.get('correo')
+        codigo_afiliado = request.form.get('codigo_afiliado', '').strip().upper()
         
         # Guardar en sesión para el checkout
         session['checkout_data'] = {
@@ -366,7 +398,8 @@ def checkout():
             'zone_id': zone_id,
             'metodo_pago': metodo_pago,
             'nombre': nombre,
-            'correo': correo
+            'correo': correo,
+            'codigo_afiliado': codigo_afiliado if codigo_afiliado else None
         }
         
         # Obtener información del producto y paquete
@@ -374,13 +407,36 @@ def checkout():
         paquete = db.execute('SELECT * FROM paquetes WHERE id = ?', (paquete_id,)).fetchone()
         config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
         
+        # Calcular descuento si hay código de afiliado
+        precio_original = paquete['precio']
+        precio_final = precio_original
+        descuento_porcentaje = 0
+        afiliado_nombre = None
+        
+        if codigo_afiliado:
+            afiliado = db.execute('''
+                SELECT id, nombre, descuento_porcentaje 
+                FROM afiliados 
+                WHERE UPPER(codigo_afiliado) = ? AND activo = 1
+            ''', (codigo_afiliado,)).fetchone()
+            
+            if afiliado:
+                descuento_porcentaje = afiliado['descuento_porcentaje']
+                descuento_monto = (precio_original * descuento_porcentaje) / 100
+                precio_final = precio_original - descuento_monto
+                afiliado_nombre = afiliado['nombre']
+        
         db.close()
         
         return render_template('checkout.html', 
                              producto=producto,
                              paquete=paquete,
                              checkout_data=session['checkout_data'],
-                             config=config)
+                             config=config,
+                             precio_original=precio_original,
+                             precio_final=precio_final,
+                             descuento_porcentaje=descuento_porcentaje,
+                             afiliado_nombre=afiliado_nombre)
     
     return redirect(url_for('index'))
 
@@ -399,13 +455,38 @@ def confirmar_orden():
     
     db = get_db()
     
+    # Obtener datos del paquete para calcular precios
+    paquete = db.execute('SELECT * FROM paquetes WHERE id = ?', (checkout_data['paquete_id'],)).fetchone()
+    precio_original = paquete['precio']
+    
+    # Verificar si hay código de afiliado
+    afiliado_id = None
+    codigo_afiliado = checkout_data.get('codigo_afiliado')
+    descuento_aplicado = 0.0
+    precio_final = precio_original
+    
+    if codigo_afiliado:
+        afiliado = db.execute('''
+            SELECT id, descuento_porcentaje 
+            FROM afiliados 
+            WHERE UPPER(codigo_afiliado) = ? AND activo = 1
+        ''', (codigo_afiliado,)).fetchone()
+        
+        if afiliado:
+            afiliado_id = afiliado['id']
+            descuento_porcentaje = afiliado['descuento_porcentaje']
+            descuento_aplicado = (precio_original * descuento_porcentaje) / 100
+            precio_final = precio_original - descuento_aplicado
+            logger.info(f"Descuento aplicado: {descuento_porcentaje}% = ${descuento_aplicado:.2f}")
+    
     # Crear la orden
     user_id = session.get('user_id', None)
     
     db.execute('''
         INSERT INTO ordenes 
-        (usuario_id, producto_id, paquete_id, player_id, zone_id, metodo_pago, nombre, correo, referencia, estado, fecha)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (usuario_id, producto_id, paquete_id, player_id, zone_id, metodo_pago, nombre, correo, referencia, 
+         estado, afiliado_id, codigo_afiliado, descuento_aplicado, precio_original, precio_final, fecha)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         user_id,
         checkout_data['producto_id'],
@@ -417,15 +498,40 @@ def confirmar_orden():
         checkout_data['correo'],
         referencia,
         'pendiente',
+        afiliado_id,
+        codigo_afiliado,
+        descuento_aplicado,
+        precio_original,
+        precio_final,
         datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     ))
     
     db.commit()
     orden_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
     
+    # Si hay afiliado, crear la comisión
+    if afiliado_id:
+        # La comisión es el mismo porcentaje que el descuento sobre el precio original
+        comision = descuento_aplicado
+        
+        db.execute('''
+            INSERT INTO comisiones_afiliados
+            (afiliado_id, orden_id, monto_orden, porcentaje_comision, monto_comision)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (afiliado_id, orden_id, precio_original, descuento_porcentaje, comision))
+        
+        # Actualizar saldo acumulado del afiliado
+        db.execute('''
+            UPDATE afiliados
+            SET saldo_acumulado = saldo_acumulado + ?
+            WHERE id = ?
+        ''', (comision, afiliado_id))
+        
+        db.commit()
+        logger.info(f"Comisión de ${comision:.2f} registrada para afiliado ID {afiliado_id}")
+    
     # Obtener datos completos de la orden para el correo
     producto = db.execute('SELECT * FROM productos WHERE id = ?', (checkout_data['producto_id'],)).fetchone()
-    paquete = db.execute('SELECT * FROM paquetes WHERE id = ?', (checkout_data['paquete_id'],)).fetchone()
     
     db.close()
     
@@ -436,7 +542,7 @@ def confirmar_orden():
     # Preparar datos para los correos
     orden_data = {
         'orden_id': orden_id,
-        'fecha': datetime.now().strftime('%d de %B de %Y'),
+        'fecha': datetime.now().strftime('%d/%m/%Y'),
         'nombre': checkout_data['nombre'],
         'correo': checkout_data['correo'],
         'producto': producto_dict['nombre'],
@@ -498,10 +604,10 @@ def login():
             logger.info(f"✓ Sesión configurada: user_id={session.get('user_id')}, is_admin={session.get('is_admin')}, permanent={session.permanent}")
             return redirect(url_for('admin_dashboard'))
         
-        # Verificar usuarios en la base de datos
         db = get_db()
+        
+        # Verificar usuarios normales en la base de datos
         user = db.execute('SELECT * FROM usuarios WHERE username = ?', (username,)).fetchone()
-        db.close()
         
         if user and check_password_hash(user['password'], password):
             session.permanent = True  # Mantener sesión activa
@@ -510,13 +616,27 @@ def login():
             session['is_admin'] = user['is_admin']
             session['is_env_admin'] = False
             logger.info(f"Usuario login exitoso: {user['username']}")
+            db.close()
             
             if user['is_admin']:
                 return redirect(url_for('admin_dashboard'))
             else:
                 return redirect(url_for('perfil'))
-        else:
-            flash('Usuario o contraseña incorrectos', 'danger')
+        
+        # Si no es usuario normal, verificar si es afiliado (usando username como correo)
+        afiliado = db.execute('SELECT * FROM afiliados WHERE correo = ? AND activo = 1', (username,)).fetchone()
+        db.close()
+        
+        if afiliado and check_password_hash(afiliado['password'], password):
+            session.permanent = True
+            session['afiliado_id'] = afiliado['id']
+            session['afiliado_nombre'] = afiliado['nombre']
+            session['es_afiliado'] = True
+            logger.info(f"Afiliado login exitoso: {afiliado['nombre']} ({afiliado['correo']})")
+            return redirect(url_for('afiliado_dashboard'))
+        
+        # Si no se encontró ni usuario ni afiliado
+        flash('Usuario/Correo o contraseña incorrectos', 'danger')
     
     db = get_db()
     config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
@@ -1386,9 +1506,16 @@ def admin_ordenes_cambiar_estado(id, estado):
             # Convertir sqlite3.Row a dict para facilitar el acceso
             orden_dict = dict(orden)
             
+            # Formatear fecha de manera segura
+            try:
+                fecha_obj = datetime.strptime(orden_dict['fecha'], '%Y-%m-%d %H:%M:%S')
+                fecha_formateada = fecha_obj.strftime('%d/%m/%Y')
+            except:
+                fecha_formateada = orden_dict['fecha']
+            
             orden_data = {
                 'orden_id': orden_dict['id'],
-                'fecha': datetime.strptime(orden_dict['fecha'], '%Y-%m-%d %H:%M:%S').strftime('%d de %B de %Y'),
+                'fecha': fecha_formateada,
                 'nombre': orden_dict['nombre'],
                 'correo': orden_dict['correo'],
                 'producto': orden_dict['producto_nombre'],
@@ -1412,6 +1539,221 @@ def admin_ordenes_cambiar_estado(id, estado):
     
     flash(f'Estado de orden cambiado a {estado}', 'success')
     return redirect(url_for('admin_ordenes'))
+
+# ============= PANEL ADMIN - AFILIADOS =============
+
+@app.route('/admin/afiliados')
+@admin_required
+def admin_afiliados():
+    db = get_db()
+    afiliados = db.execute('''
+        SELECT a.*, COUNT(c.id) as total_comisiones
+        FROM afiliados a
+        LEFT JOIN comisiones_afiliados c ON a.id = c.afiliado_id
+        GROUP BY a.id
+        ORDER BY a.fecha_registro DESC
+    ''').fetchall()
+    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+    db.close()
+    
+    return render_template('admin/afiliados.html', afiliados=afiliados, config=config)
+
+@app.route('/admin/afiliados/crear', methods=['POST'])
+@admin_required
+def admin_afiliados_crear():
+    nombre = request.form.get('nombre')
+    correo = request.form.get('correo')
+    password = request.form.get('password')
+    codigo_afiliado = request.form.get('codigo_afiliado').strip().upper()
+    descuento = request.form.get('descuento', 10.0)
+    
+    db = get_db()
+    
+    # Verificar si el código o correo ya existen
+    existe = db.execute('''
+        SELECT id FROM afiliados 
+        WHERE UPPER(codigo_afiliado) = ? OR correo = ?
+    ''', (codigo_afiliado, correo)).fetchone()
+    
+    if existe:
+        flash('El código de afiliado o correo ya existe', 'danger')
+    else:
+        hashed_password = generate_password_hash(password)
+        db.execute('''
+            INSERT INTO afiliados (nombre, correo, password, codigo_afiliado, descuento_porcentaje)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (nombre, correo, hashed_password, codigo_afiliado, descuento))
+        db.commit()
+        flash('Afiliado creado exitosamente', 'success')
+    
+    db.close()
+    return redirect(url_for('admin_afiliados'))
+
+@app.route('/admin/afiliados/editar/<int:id>', methods=['POST'])
+@admin_required
+def admin_afiliados_editar(id):
+    nombre = request.form.get('nombre')
+    correo = request.form.get('correo')
+    nueva_password = request.form.get('nueva_password')
+    codigo_afiliado = request.form.get('codigo_afiliado').strip().upper()
+    descuento = request.form.get('descuento')
+    activo = 1 if request.form.get('activo') else 0
+    
+    db = get_db()
+    
+    if nueva_password:
+        hashed_password = generate_password_hash(nueva_password)
+        db.execute('''
+            UPDATE afiliados 
+            SET nombre = ?, correo = ?, password = ?, codigo_afiliado = ?, descuento_porcentaje = ?, activo = ?
+            WHERE id = ?
+        ''', (nombre, correo, hashed_password, codigo_afiliado, descuento, activo, id))
+    else:
+        db.execute('''
+            UPDATE afiliados 
+            SET nombre = ?, correo = ?, codigo_afiliado = ?, descuento_porcentaje = ?, activo = ?
+            WHERE id = ?
+        ''', (nombre, correo, codigo_afiliado, descuento, activo, id))
+    
+    db.commit()
+    db.close()
+    
+    flash('Afiliado actualizado exitosamente', 'success')
+    return redirect(url_for('admin_afiliados'))
+
+@app.route('/admin/afiliados/eliminar/<int:id>')
+@admin_required
+def admin_afiliados_eliminar(id):
+    db = get_db()
+    db.execute('DELETE FROM afiliados WHERE id = ?', (id,))
+    db.commit()
+    db.close()
+    
+    flash('Afiliado eliminado', 'success')
+    return redirect(url_for('admin_afiliados'))
+
+@app.route('/admin/afiliados/<int:id>/comisiones')
+@admin_required
+def admin_afiliado_comisiones(id):
+    db = get_db()
+    afiliado = db.execute('SELECT * FROM afiliados WHERE id = ?', (id,)).fetchone()
+    
+    comisiones = db.execute('''
+        SELECT c.*, o.fecha as orden_fecha, p.nombre as producto_nombre, pk.nombre as paquete_nombre
+        FROM comisiones_afiliados c
+        LEFT JOIN ordenes o ON c.orden_id = o.id
+        LEFT JOIN productos p ON o.producto_id = p.id
+        LEFT JOIN paquetes pk ON o.paquete_id = pk.id
+        WHERE c.afiliado_id = ?
+        ORDER BY c.fecha DESC
+    ''', (id,)).fetchall()
+    
+    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+    db.close()
+    
+    return render_template('admin/afiliado_comisiones.html', afiliado=afiliado, comisiones=comisiones, config=config)
+
+# ============= LOGIN Y DASHBOARD DE AFILIADOS =============
+
+@app.route('/afiliado/login', methods=['GET', 'POST'])
+def afiliado_login():
+    if request.method == 'POST':
+        correo = request.form.get('correo')
+        password = request.form.get('password')
+        
+        db = get_db()
+        afiliado = db.execute('SELECT * FROM afiliados WHERE correo = ? AND activo = 1', (correo,)).fetchone()
+        
+        logger.info(f"Intento de login afiliado: correo={correo}")
+        
+        if afiliado:
+            logger.info(f"Afiliado encontrado: ID={afiliado['id']}, nombre={afiliado['nombre']}")
+            logger.info(f"Verificando contraseña...")
+            
+            password_ok = check_password_hash(afiliado['password'], password)
+            logger.info(f"Contraseña válida: {password_ok}")
+            
+            if password_ok:
+                session.permanent = True
+                session['afiliado_id'] = afiliado['id']
+                session['afiliado_nombre'] = afiliado['nombre']
+                session['es_afiliado'] = True
+                logger.info(f"Afiliado login exitoso: {afiliado['nombre']}")
+                db.close()
+                return redirect(url_for('afiliado_dashboard'))
+        else:
+            logger.warning(f"No se encontró afiliado activo con correo: {correo}")
+        
+        db.close()
+        flash('Correo o contraseña incorrectos', 'danger')
+    
+    db = get_db()
+    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+    db.close()
+    
+    return render_template('afiliado/login.html', config=config)
+
+@app.route('/afiliado/logout')
+def afiliado_logout():
+    session.pop('afiliado_id', None)
+    session.pop('afiliado_nombre', None)
+    session.pop('es_afiliado', None)
+    flash('Sesión cerrada', 'success')
+    return redirect(url_for('afiliado_login'))
+
+def afiliado_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'afiliado_id' not in session or not session.get('es_afiliado'):
+            flash('Acceso denegado. Por favor inicia sesión como afiliado.', 'danger')
+            return redirect(url_for('afiliado_login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/afiliado/dashboard')
+@afiliado_required
+def afiliado_dashboard():
+    afiliado_id = session['afiliado_id']
+    
+    db = get_db()
+    
+    # Datos del afiliado
+    afiliado = db.execute('SELECT * FROM afiliados WHERE id = ?', (afiliado_id,)).fetchone()
+    
+    # Estadísticas
+    total_comisiones = db.execute('''
+        SELECT COUNT(*) as total FROM comisiones_afiliados WHERE afiliado_id = ?
+    ''', (afiliado_id,)).fetchone()['total']
+    
+    comisiones_mes = db.execute('''
+        SELECT SUM(monto_comision) as total 
+        FROM comisiones_afiliados 
+        WHERE afiliado_id = ? 
+        AND strftime('%Y-%m', fecha) = strftime('%Y-%m', 'now')
+    ''', (afiliado_id,)).fetchone()['total'] or 0
+    
+    # Últimas comisiones
+    comisiones = db.execute('''
+        SELECT c.*, o.fecha as orden_fecha, p.nombre as producto_nombre, pk.nombre as paquete_nombre, o.nombre as cliente_nombre
+        FROM comisiones_afiliados c
+        LEFT JOIN ordenes o ON c.orden_id = o.id
+        LEFT JOIN productos p ON o.producto_id = p.id
+        LEFT JOIN paquetes pk ON o.paquete_id = pk.id
+        WHERE c.afiliado_id = ?
+        ORDER BY c.fecha DESC
+        LIMIT 20
+    ''', (afiliado_id,)).fetchall()
+    
+    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+    
+    db.close()
+    
+    return render_template('afiliado/dashboard.html', 
+                         afiliado=afiliado,
+                         total_comisiones=total_comisiones,
+                         comisiones_mes=comisiones_mes,
+                         comisiones=comisiones,
+                         config=config)
 
 # Servir archivos estáticos desde el disco persistente cuando UPLOAD_FOLDER es absoluto
 @app.route('/uploads/<path:filename>')

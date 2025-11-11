@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar del Admin -->
+        <div class="col-md-2 bg-light p-3">
+            <h5 class="mb-3">Panel Admin</h5>
+            <hr>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_productos') }}">
+                        <i class="bi bi-box"></i> Productos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_categorias') }}">
+                        <i class="bi bi-grid"></i> Categorías
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_banners') }}">
+                        <i class="bi bi-image"></i> Banners
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_banners_intermedios') }}">
+                        <i class="bi bi-images"></i> Banners Intermedios
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_galeria') }}">
+                        <i class="bi bi-card-image"></i> Galería
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_ordenes') }}">
+                        <i class="bi bi-cart"></i> Órdenes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link active" href="{{ url_for('admin_afiliados') }}">
+                        <i class="bi bi-people"></i> Afiliados
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('admin_configuracion') }}">
+                        <i class="bi bi-gear"></i> Configuración
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Contenido Principal -->
+        <div class="col-md-10 p-4">
+            <div class="mb-4">
+                <a href="{{ url_for('admin_afiliados') }}" class="btn btn-secondary mb-3">
+                    <i class="bi bi-arrow-left"></i> Volver a Afiliados
+                </a>
+                <h2><i class="bi bi-cash-stack"></i> Comisiones de {{ afiliado.nombre }}</h2>
+            </div>
+
+            <!-- Info del Afiliado -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-1">Código</h6>
+                            <h4><code>{{ afiliado.codigo_afiliado }}</code></h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="text-muted mb-1">Descuento/Comisión</h6>
+                            <h4>{{ afiliado.descuento_porcentaje }}%</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h6 class="mb-1">Saldo Acumulado</h6>
+                            <h4>${{ "%.2f"|format(afiliado.saldo_acumulado) }}</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <h6 class="mb-1">Total Comisiones</h6>
+                            <h4>{{ comisiones|length }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Comisiones -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Historial de Comisiones</h5>
+                </div>
+                <div class="card-body">
+                    {% if comisiones %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Fecha</th>
+                                    <th>Orden</th>
+                                    <th>Producto</th>
+                                    <th>Paquete</th>
+                                    <th>Monto Orden</th>
+                                    <th>% Comisión</th>
+                                    <th>Monto Comisión</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for comision in comisiones %}
+                                <tr>
+                                    <td>{{ comision.id }}</td>
+                                    <td>{{ comision.fecha[:10] }}</td>
+                                    <td><a href="{{ url_for('admin_ordenes') }}">#{{ comision.orden_id }}</a></td>
+                                    <td>{{ comision.producto_nombre }}</td>
+                                    <td>{{ comision.paquete_nombre }}</td>
+                                    <td>${{ "%.2f"|format(comision.monto_orden) }}</td>
+                                    <td>{{ comision.porcentaje_comision }}%</td>
+                                    <td class="text-success fw-bold">${{ "%.2f"|format(comision.monto_comision) }}</td>
+                                </tr>
+                                {% endfor %}
+                                <tr class="table-success fw-bold">
+                                    <td colspan="7" class="text-end">TOTAL:</td>
+                                    <td class="text-success">${{ "%.2f"|format(afiliado.saldo_acumulado) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Este afiliado aún no tiene comisiones registradas.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

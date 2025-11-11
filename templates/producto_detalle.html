@@ -30,6 +30,18 @@
                     </span>
                 </div>
 
+                <!-- Descripción del Producto -->
+                {% if producto.descripcion %}
+                <div class="mb-4 text-start">
+                    <div class="card" style="background-color: rgba(42, 42, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1);">
+                        <div class="card-body">
+                            <h6 class="text-primary mb-2"><i class="bi bi-info-circle"></i> Descripción</h6>
+                            <p class="text-muted mb-0" style="white-space: pre-line;">{{ producto.descripcion }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <!-- Panel de Resumen de Selección -->
                 <div id="resumenPanel" class="card" style="display: none; border: 2px solid #dc0000;">
                     <div class="card-body text-center">
@@ -180,6 +192,27 @@
                         <div class="col-md-6">
                             <label class="form-label">Correo Electrónico</label>
                             <input type="email" class="form-control" name="correo" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Código de Afiliado (Opcional) -->
+                <div class="step-container mb-4">
+                    <h5 class="fw-bold mb-3">
+                        <span class="badge bg-success me-2"><i class="bi bi-gift"></i></span> 
+                        ¿Tienes un Código de Afiliado? (Opcional)
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Código de Descuento</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" name="codigo_afiliado" id="codigoAfiliado" placeholder="Ingresa tu código">
+                                <button class="btn btn-outline-success" type="button" onclick="validarCodigoAfiliado()">
+                                    <i class="bi bi-check-circle"></i> Validar
+                                </button>
+                            </div>
+                            <small class="text-muted">Si tienes un código de afiliado, obtendrás un descuento especial</small>
+                            <div id="mensajeAfiliado" class="mt-2"></div>
                         </div>
                     </div>
                 </div>
@@ -651,26 +684,56 @@ function actualizarResumen() {
         nombreEl.textContent = paqueteSeleccionado.nombre;
         mobilePackageName.textContent = paqueteSeleccionado.nombre;
         
+        // Calcular precio con descuento de afiliado si aplica
+        let precioFinal = paqueteSeleccionado.precio;
+        let descuentoTexto = '';
+        
+        if (afiliadoValidado && afiliadoValidado.descuento) {
+            const descuento = (paqueteSeleccionado.precio * afiliadoValidado.descuento) / 100;
+            precioFinal = paqueteSeleccionado.precio - descuento;
+            descuentoTexto = ` (${afiliadoValidado.descuento}% OFF)`;
+        }
+        
         // Calcular precio según método de pago
         let precioTexto = '';
         if (metodoSeleccionado === 'pagomovil') {
-            const precioBS = (paqueteSeleccionado.precio * tasaCambio).toFixed(2);
-            precioTexto = precioBS + ' Bs';
-            precioEl.textContent = precioTexto;
+            const precioBS = (precioFinal * tasaCambio).toFixed(2);
+            const precioOriginalBS = afiliadoValidado ? (paqueteSeleccionado.precio * tasaCambio).toFixed(2) : null;
+            
+            if (afiliadoValidado) {
+                precioTexto = `<span style="text-decoration: line-through; color: #999;">${precioOriginalBS} Bs</span> ${precioBS} Bs${descuentoTexto}`;
+            } else {
+                precioTexto = precioBS + ' Bs';
+            }
+            precioEl.innerHTML = precioTexto;
             metodoEl.textContent = 'Pago en Bolívares (Pago Móvil)';
         } else if (metodoSeleccionado === 'binance') {
-            precioTexto = '$' + paqueteSeleccionado.precio.toFixed(2) + ' USD';
-            precioEl.textContent = precioTexto;
+            if (afiliadoValidado) {
+                precioTexto = `<span style="text-decoration: line-through; color: #999;">$${paqueteSeleccionado.precio.toFixed(2)}</span> $${precioFinal.toFixed(2)} USD${descuentoTexto}`;
+            } else {
+                precioTexto = '$' + precioFinal.toFixed(2) + ' USD';
+            }
+            precioEl.innerHTML = precioTexto;
             metodoEl.textContent = 'Pago en Dólares (Binance)';
         } else {
-            // Sin método seleccionado - mostrar solo USD por defecto
-            precioTexto = '$' + paqueteSeleccionado.precio.toFixed(2) + ' USD';
-            precioEl.textContent = precioTexto;
-            metodoEl.textContent = 'Selecciona un método de pago para ver el precio en Bs';
+            // Sin método seleccionado - mostrar precio en Bs por defecto
+            const precioBS = (precioFinal * tasaCambio).toFixed(2);
+            const precioOriginalBS = afiliadoValidado ? (paqueteSeleccionado.precio * tasaCambio).toFixed(2) : null;
+            
+            if (afiliadoValidado) {
+                precioTexto = `<span style="text-decoration: line-through; color: #999;">${precioOriginalBS} Bs</span> ${precioBS} Bs${descuentoTexto}`;
+            } else {
+                precioTexto = precioBS + ' Bs';
+            }
+            precioEl.innerHTML = precioTexto;
+            metodoEl.textContent = 'Selecciona un método de pago';
         }
         
-        // Actualizar y mostrar footer móvil
-        mobilePackagePrice.textContent = precioTexto;
+        // Actualizar y mostrar footer móvil - siempre en Bs por defecto
+        const precioBsMovil = (precioFinal * tasaCambio).toFixed(2);
+        mobilePackagePrice.innerHTML = afiliadoValidado ? 
+            `${precioBsMovil} Bs${descuentoTexto}` : 
+            (metodoSeleccionado === 'pagomovil' ? `${precioBsMovil} Bs` : `${precioBsMovil} Bs`);
         
         // Mostrar footer móvil solo en pantallas pequeñas
         if (window.innerWidth <= 768) {
@@ -707,6 +770,44 @@ function togglePaquetes() {
         btn.innerHTML = '<i class="bi bi-chevron-up"></i> Ver Menos';
     } else {
         btn.innerHTML = '<i class="bi bi-chevron-down"></i> Ver Más';
+    }
+}
+
+// Variable global para almacenar info del afiliado validado
+let afiliadoValidado = null;
+
+// Función para validar código de afiliado
+async function validarCodigoAfiliado() {
+    const codigo = document.getElementById('codigoAfiliado').value.trim();
+    const mensajeDiv = document.getElementById('mensajeAfiliado');
+    
+    if (!codigo) {
+        mensajeDiv.innerHTML = '<div class="alert alert-warning py-2"><small>Por favor ingresa un código</small></div>';
+        return;
+    }
+    
+    try {
+        const response = await fetch('/api/validar_afiliado', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ codigo: codigo })
+        });
+        
+        const data = await response.json();
+        
+        if (data.valido) {
+            afiliadoValidado = data;
+            mensajeDiv.innerHTML = `<div class="alert alert-success py-2"><small><i class="bi bi-check-circle-fill"></i> ¡Código válido! Recibirás ${data.descuento}% de descuento</small></div>`;
+            // Actualizar resumen con el descuento
+            actualizarResumen();
+        } else {
+            afiliadoValidado = null;
+            mensajeDiv.innerHTML = '<div class="alert alert-danger py-2"><small><i class="bi bi-x-circle-fill"></i> Código inválido</small></div>';
+        }
+    } catch (error) {
+        mensajeDiv.innerHTML = '<div class="alert alert-danger py-2"><small>Error al validar el código</small></div>';
     }
 }
 </script>

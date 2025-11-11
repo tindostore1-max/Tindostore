@@ -131,6 +131,38 @@ def init_database():
         )
     ''')
     
+    # Tabla de afiliados
+    print('Creando tabla: afiliados')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS afiliados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL,
+            correo TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            codigo_afiliado TEXT UNIQUE NOT NULL,
+            descuento_porcentaje REAL DEFAULT 10.0,
+            saldo_acumulado REAL DEFAULT 0.0,
+            activo INTEGER DEFAULT 1,
+            fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Tabla de comisiones de afiliados
+    print('Creando tabla: comisiones_afiliados')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS comisiones_afiliados (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            afiliado_id INTEGER NOT NULL,
+            orden_id INTEGER NOT NULL,
+            monto_orden REAL NOT NULL,
+            porcentaje_comision REAL NOT NULL,
+            monto_comision REAL NOT NULL,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (afiliado_id) REFERENCES afiliados (id),
+            FOREIGN KEY (orden_id) REFERENCES ordenes (id)
+        )
+    ''')
+    
     # Tabla de órdenes
     print('Creando tabla: ordenes')
     c.execute('''
@@ -146,10 +178,17 @@ def init_database():
             correo TEXT NOT NULL,
             referencia TEXT NOT NULL,
             estado TEXT DEFAULT 'pendiente',
+            codigo_giftcard TEXT DEFAULT NULL,
+            afiliado_id INTEGER DEFAULT NULL,
+            codigo_afiliado TEXT DEFAULT NULL,
+            descuento_aplicado REAL DEFAULT 0.0,
+            precio_original REAL DEFAULT 0.0,
+            precio_final REAL DEFAULT 0.0,
             fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (usuario_id) REFERENCES usuarios (id),
             FOREIGN KEY (producto_id) REFERENCES productos (id),
-            FOREIGN KEY (paquete_id) REFERENCES paquetes (id)
+            FOREIGN KEY (paquete_id) REFERENCES paquetes (id),
+            FOREIGN KEY (afiliado_id) REFERENCES afiliados (id)
         )
     ''')
     
