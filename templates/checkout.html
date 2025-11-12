@@ -216,7 +216,7 @@
                         <i class="bi bi-bank"></i>
                         <span class="payment-info-text">{{ config.pagomovil_banco if config else 'Banco' }}</span>
                     </div>
-                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.pagomovil_banco if config else '' }}')">Copiar</button>
+                    <button type="button" class="btn-copy" onclick="copyFromSibling(this)">Copiar</button>
                 </div>
                 
                 <div class="payment-info-item">
@@ -224,7 +224,7 @@
                         <i class="bi bi-person"></i>
                         <span class="payment-info-text">{{ config.pagomovil_titular if config else 'Titular' }}</span>
                     </div>
-                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.pagomovil_titular if config else '' }}')">Copiar</button>
+                    <button type="button" class="btn-copy" onclick="copyFromSibling(this)">Copiar</button>
                 </div>
                 
                 <div class="payment-info-item">
@@ -232,7 +232,7 @@
                         <i class="bi bi-phone"></i>
                         <span class="payment-info-text">{{ config.pagomovil_telefono if config else '0424-0000000' }}</span>
                     </div>
-                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.pagomovil_telefono if config else '' }}')">Copiar</button>
+                    <button type="button" class="btn-copy" onclick="copyFromSibling(this)">Copiar</button>
                 </div>
                 
                 <div class="payment-info-item">
@@ -240,7 +240,7 @@
                         <i class="bi bi-card-text"></i>
                         <span class="payment-info-text">{{ config.pagomovil_cedula if config else 'V-00000000' }}</span>
                     </div>
-                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.pagomovil_cedula if config else '' }}')">Copiar</button>
+                    <button type="button" class="btn-copy" onclick="copyFromSibling(this)">Copiar</button>
                 </div>
                 {% else %}
                 <!-- Binance -->
@@ -249,7 +249,7 @@
                         <i class="bi bi-envelope"></i>
                         <span class="payment-info-text">{{ config.binance_correo if config else 'ejemplo@correo.com' }}</span>
                     </div>
-                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.binance_correo if config else '' }}')">Copiar</button>
+                    <button type="button" class="btn-copy" onclick="copyFromSibling(this)">Copiar</button>
                 </div>
                 
                 {% if config and config.binance_pay_id %}
@@ -258,7 +258,7 @@
                         <i class="bi bi-credit-card"></i>
                         <span class="payment-info-text">{{ config.binance_pay_id }}</span>
                     </div>
-                    <button type="button" class="btn-copy" onclick="copyToClipboard('{{ config.binance_pay_id }}')">Copiar</button>
+                    <button type="button" class="btn-copy" onclick="copyFromSibling(this)">Copiar</button>
                 </div>
                 {% endif %}
                 {% endif %}
@@ -347,11 +347,22 @@ referenciaInput.addEventListener('input', function(e) {
     confirmButton.disabled = value.length !== 6;
 });
 
+// Copiar leyendo el texto del elemento hermano en la fila
+function copyFromSibling(btn) {
+    const container = btn.closest('.payment-info-item');
+    const textEl = container ? container.querySelector('.payment-info-text') : null;
+    const text = textEl ? (textEl.textContent || '').trim() : '';
+    if (!text) {
+        alert('No hay texto para copiar.');
+        return;
+    }
+    copyToClipboard(text, btn);
+}
+
 // Función para copiar al portapapeles
-function copyToClipboard(text) {
+function copyToClipboard(text, btn) {
     navigator.clipboard.writeText(text).then(() => {
         // Mostrar feedback
-        const btn = event.target;
         const originalText = btn.textContent;
         btn.textContent = '✓ Copiado';
         btn.style.background = '#27ae60';
