@@ -200,6 +200,16 @@ def inicializar_sistema():
                     cursor.execute("ALTER TABLE ordenes ADD COLUMN cantidad INTEGER DEFAULT 1")
                     conn.commit()
                     logger.info("Columna 'cantidad' agregada exitosamente")
+                if 'precio_original' not in columnas_ordenes:
+                    logger.warning("Agregando columna 'precio_original' a tabla ordenes...")
+                    cursor.execute("ALTER TABLE ordenes ADD COLUMN precio_original REAL DEFAULT 0.0")
+                    conn.commit()
+                    logger.info("Columna 'precio_original' agregada exitosamente")
+                if 'precio_final' not in columnas_ordenes:
+                    logger.warning("Agregando columna 'precio_final' a tabla ordenes...")
+                    cursor.execute("ALTER TABLE ordenes ADD COLUMN precio_final REAL DEFAULT 0.0")
+                    conn.commit()
+                    logger.info("Columna 'precio_final' agregada exitosamente")
                 
                 # Migrar rutas de imágenes si es necesario
                 cursor.execute("SELECT logo FROM configuracion WHERE logo LIKE 'uploads/%' LIMIT 1")
