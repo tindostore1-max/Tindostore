@@ -81,7 +81,8 @@
                                     <th>Usuario</th>
                                     <th>Producto</th>
                                     <th>Paquete</th>
-                                    <th>Precio</th>
+                                    <th>Cant.</th>
+                                    <th>Total</th>
                                     <th>Player ID</th>
                                     <th>Zone ID</th>
                                     <th>Método</th>
@@ -98,7 +99,8 @@
                                     <td>{{ orden.usuario_nombre if orden.usuario_nombre else orden.nombre }}</td>
                                     <td>{{ orden.producto_nombre }}</td>
                                     <td>{{ orden.paquete_nombre }}</td>
-                                    <td>${{ orden.precio }}</td>
+                                    <td>{{ orden.cantidad if orden.cantidad else 1 }}</td>
+                                    <td>${{ ('%.2f' % (orden.precio_final if orden.precio_final is not none else (orden.precio * (orden.cantidad if orden.cantidad else 1)))) }}</td>
                                     <td>
                                         {% if orden.player_id %}
                                         <div class="d-flex align-items-center gap-1">
@@ -198,8 +200,12 @@
                                 <span class="info-value">{{ orden.paquete_nombre }}</span>
                             </div>
                             <div class="info-row">
-                                <span class="info-label">Precio:</span>
-                                <span class="info-value fw-bold" style="color: var(--primary-color);">${{ orden.precio }}</span>
+                                <span class="info-label">Cantidad:</span>
+                                <span class="info-value">{{ orden.cantidad if orden.cantidad else 1 }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Total:</span>
+                                <span class="info-value fw-bold" style="color: var(--primary-color);">${{ '%.2f' % (orden.precio_final if orden.precio_final is not none else (orden.precio * (orden.cantidad if orden.cantidad else 1))) }}</span>
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Método:</span>

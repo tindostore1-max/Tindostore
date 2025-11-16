@@ -23,8 +23,7 @@
                         <div class="mb-4">
                             <label class="form-label">Contraseña</label>
                             <div class="input-group">
-                                <input type="password" class="form-control form-control-lg" 
-                                       name="password" id="password" required>
+                                <input type="password" class="form-control form-control-lg" name="password" id="password" required>
                                 <button class="btn btn-outline-secondary" type="button" id="togglePassword">
                                     <i class="bi bi-eye"></i>
                                 </button>
@@ -48,24 +47,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const togglePassword = document.querySelector('#togglePassword');
-        const password = document.querySelector('#password');
-        const icon = togglePassword.querySelector('i');
-
-        togglePassword.addEventListener('click', function() {
-            // Cambiar el tipo de input
-            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
-            password.setAttribute('type', type);
-            
-            // Cambiar el ícono
-            icon.classList.toggle('bi-eye');
-            icon.classList.toggle('bi-eye-slash');
-        });
-    });
-</script>
 {% endblock %}

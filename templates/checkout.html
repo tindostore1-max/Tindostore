@@ -194,6 +194,14 @@
                     {% endif %}
                 </p>
                 {% endif %}
+                <p class="mb-1">Cantidad: <strong>{{ cantidad }}</strong></p>
+                <p class="mb-1">Precio unitario: 
+                    {% if checkout_data.metodo_pago == 'pagomovil' and config and config.tasa_cambio %}
+                        Bs {{ "%.2f"|format(precio_unitario * config.tasa_cambio) }}
+                    {% else %}
+                        ${{ "%.2f"|format(precio_unitario) }} USD
+                    {% endif %}
+                </p>
                 <h3>Total a pagar: 
                     {% if checkout_data.metodo_pago == 'pagomovil' and config and config.tasa_cambio %}
                         Bs {{ "%.2f"|format(precio_final * config.tasa_cambio) }}

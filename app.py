@@ -398,6 +398,13 @@ def checkout():
         nombre = request.form.get('nombre')
         correo = request.form.get('correo')
         codigo_afiliado = request.form.get('codigo_afiliado', '').strip().upper()
+        # Cantidad
+        try:
+            cantidad = int(request.form.get('cantidad', 1))
+            if cantidad < 1:
+                cantidad = 1
+        except Exception:
+            cantidad = 1
         
         # Guardar en sesión para el checkout
         session['checkout_data'] = {
@@ -408,7 +415,8 @@ def checkout():
             'metodo_pago': metodo_pago,
             'nombre': nombre,
             'correo': correo,
-            'codigo_afiliado': codigo_afiliado if codigo_afiliado else None
+            'codigo_afiliado': codigo_afiliado if codigo_afiliado else None,
+            'cantidad': cantidad
         }
         
         # Obtener información del producto y paquete
@@ -417,7 +425,8 @@ def checkout():
         config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
         
         # Calcular descuento si hay código de afiliado
-        precio_original = paquete['precio']
+        precio_unitario = paquete['precio']
+        precio_original = precio_unitario * cantidad
         precio_final = precio_original
         descuento_porcentaje = 0
         afiliado_nombre = None
@@ -431,8 +440,9 @@ def checkout():
             
             if afiliado:
                 descuento_porcentaje = afiliado['descuento_porcentaje']
-                descuento_monto = (precio_original * descuento_porcentaje) / 100
-                precio_final = precio_original - descuento_monto
+                descuento_monto_unit = (precio_unitario * descuento_porcentaje) / 100
+                precio_unit_final = precio_unitario - descuento_monto_unit
+                precio_final = precio_unit_final * cantidad
                 afiliado_nombre = afiliado['nombre']
         
         db.close()
@@ -442,6 +452,8 @@ def checkout():
                              paquete=paquete,
                              checkout_data=session['checkout_data'],
                              config=config,
+                             cantidad=cantidad,
+                             precio_unitario=precio_unitario,
                              precio_original=precio_original,
                              precio_final=precio_final,
                              descuento_porcentaje=descuento_porcentaje,
@@ -483,7 +495,9 @@ def confirmar_orden():
     
     # Obtener datos del paquete para calcular precios
     paquete = db.execute('SELECT * FROM paquetes WHERE id = ?', (checkout_data['paquete_id'],)).fetchone()
-    precio_original = paquete['precio']
+    cantidad = int(checkout_data.get('cantidad', 1) or 1)
+    precio_unitario = paquete['precio']
+    precio_original = precio_unitario * cantidad
     
     # Verificar si hay código de afiliado
     afiliado_id = None
@@ -501,22 +515,34 @@ def confirmar_orden():
         if afiliado:
             afiliado_id = afiliado['id']
             descuento_porcentaje = afiliado['descuento_porcentaje']
-            descuento_aplicado = (precio_original * descuento_porcentaje) / 100
-            precio_final = precio_original - descuento_aplicado
+            descuento_aplicado_unit = (precio_unitario * descuento_porcentaje) / 100
+            precio_final = (precio_unitario - descuento_aplicado_unit) * cantidad
+            descuento_aplicado = precio_original - precio_final
             logger.info(f"Descuento aplicado: {descuento_porcentaje}% = ${descuento_aplicado:.2f}")
     
+    # Verificar/Agregar columna cantidad si no existe
+    try:
+        cursor = db.execute("PRAGMA table_info(ordenes)")
+        columnas_existentes = [col[1] for col in cursor.fetchall()]
+        if 'cantidad' not in columnas_existentes:
+            db.execute("ALTER TABLE ordenes ADD COLUMN cantidad INTEGER DEFAULT 1")
+            db.commit()
+    except Exception as e:
+        logger.error(f"Error agregando columna cantidad: {e}")
+
     # Crear la orden
     user_id = session.get('user_id', None)
     
     db.execute('''
         INSERT INTO ordenes 
-        (usuario_id, producto_id, paquete_id, player_id, zone_id, metodo_pago, nombre, correo, referencia, 
+        (usuario_id, producto_id, paquete_id, cantidad, player_id, zone_id, metodo_pago, nombre, correo, referencia, 
          estado, afiliado_id, codigo_afiliado, descuento_aplicado, precio_original, precio_final, fecha)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         user_id,
         checkout_data['producto_id'],
         checkout_data['paquete_id'],
+        cantidad,
         checkout_data['player_id'],
         checkout_data.get('zone_id', ''),
         checkout_data['metodo_pago'],
@@ -573,7 +599,9 @@ def confirmar_orden():
         'correo': checkout_data['correo'],
         'producto': producto_dict['nombre'],
         'paquete': paquete_dict['nombre'],
-        'precio': f"{paquete_dict['precio']:.2f}",
+        'precio_unitario': f"{precio_unitario:.2f}",
+        'cantidad': cantidad,
+        'total': f"{precio_final:.2f}",
         'player_id': checkout_data['player_id'],
         'zone_id': checkout_data.get('zone_id', ''),
         'metodo_pago': checkout_data['metodo_pago'],

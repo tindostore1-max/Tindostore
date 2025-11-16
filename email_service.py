@@ -167,8 +167,16 @@ def generar_html_nueva_orden(orden_data):
                         <span class="value">{orden_data['paquete']}</span>
                     </div>
                     <div class="detail-row">
-                        <span class="label">Precio:</span>
-                        <span class="value">${orden_data['precio']}</span>
+                        <span class="label">Cantidad:</span>
+                        <span class="value">{orden_data.get('cantidad', 1)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Precio unitario:</span>
+                        <span class="value">${orden_data.get('precio_unitario', orden_data.get('precio', '0.00'))}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Total:</span>
+                        <span class="value"><strong>${orden_data.get('total', orden_data.get('precio', '0.00'))}</strong></span>
                     </div>
                     <div class="detail-row">
                         <span class="label">Player ID:</span>
@@ -328,8 +336,16 @@ def generar_html_orden_creada(orden_data):
                         <span class="value">{orden_data['paquete']}</span>
                     </div>
                     <div class="detail-row">
-                        <span class="label">Costo:</span>
-                        <span class="value"><strong>USD ${orden_data['precio']}</strong></span>
+                        <span class="label">Cantidad:</span>
+                        <span class="value">{orden_data.get('cantidad', 1)}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Precio unitario:</span>
+                        <span class="value">USD ${orden_data.get('precio_unitario', orden_data.get('precio', '0.00'))}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Total pagado:</span>
+                        <span class="value"><strong>USD ${orden_data.get('total', orden_data.get('precio', '0.00'))}</strong></span>
                     </div>
                 </div>
                 
