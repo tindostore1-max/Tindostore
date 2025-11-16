@@ -192,6 +192,14 @@ def inicializar_sistema():
                         ''', (producto[0],))
                     conn.commit()
                     logger.info("Órdenes asignados exitosamente")
+
+                cursor.execute("PRAGMA table_info(ordenes)")
+                columnas_ordenes = [row[1] for row in cursor.fetchall()]
+                if 'cantidad' not in columnas_ordenes:
+                    logger.warning("Agregando columna 'cantidad' a tabla ordenes...")
+                    cursor.execute("ALTER TABLE ordenes ADD COLUMN cantidad INTEGER DEFAULT 1")
+                    conn.commit()
+                    logger.info("Columna 'cantidad' agregada exitosamente")
                 
                 # Migrar rutas de imágenes si es necesario
                 cursor.execute("SELECT logo FROM configuracion WHERE logo LIKE 'uploads/%' LIMIT 1")
