@@ -1538,8 +1538,14 @@ def admin_galeria_listar():
 def admin_ordenes():
     db = get_db()
     ordenes = db.execute('''
-        SELECT o.*, p.nombre as producto_nombre, p.tipo as producto_tipo, pk.nombre as paquete_nombre, pk.precio,
-               u.username as usuario_nombre
+        SELECT 
+            o.*,
+            p.nombre as producto_nombre,
+            p.tipo as producto_tipo,
+            pk.nombre as paquete_nombre,
+            COALESCE(pk.precio, 0) as precio,
+            COALESCE(o.cantidad, 1) as cantidad,
+            u.username as usuario_nombre
         FROM ordenes o
         LEFT JOIN productos p ON o.producto_id = p.id
         LEFT JOIN paquetes pk ON o.paquete_id = pk.id

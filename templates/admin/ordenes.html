@@ -100,7 +100,7 @@
                                     <td>{{ orden.producto_nombre }}</td>
                                     <td>{{ orden.paquete_nombre }}</td>
                                     <td>{{ orden.cantidad if orden.cantidad else 1 }}</td>
-                                    <td>${{ ('%.2f' % (orden.precio_final if orden.precio_final is not none else (orden.precio * (orden.cantidad if orden.cantidad else 1)))) }}</td>
+                                    <td>${{ ('%.2f' % (orden.precio_final if orden.precio_final is not none else ((orden.precio or 0) * (orden.cantidad or 1)))) }}</td>
                                     <td>
                                         {% if orden.player_id %}
                                         <div class="d-flex align-items-center gap-1">
@@ -205,7 +205,7 @@
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Total:</span>
-                                <span class="info-value fw-bold" style="color: var(--primary-color);">${{ '%.2f' % (orden.precio_final if orden.precio_final is not none else (orden.precio * (orden.cantidad if orden.cantidad else 1))) }}</span>
+                                <span class="info-value fw-bold" style="color: var(--primary-color);">${{ '%.2f' % (orden.precio_final if orden.precio_final is not none else ((orden.precio or 0) * (orden.cantidad or 1))) }}</span>
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Método:</span>
