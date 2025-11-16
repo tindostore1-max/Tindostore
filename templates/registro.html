@@ -26,7 +26,12 @@
 
                         <div class="mb-4">
                             <label class="form-label">Contraseña</label>
-                            <input type="password" class="form-control form-control-lg" name="password" required>
+                            <div class="input-group input-group-lg">
+                                <input type="password" class="form-control" name="password" id="registroPassword" required>
+                                <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('registroPassword', this)" tabindex="-1" aria-label="Mostrar u ocultar contraseña">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="d-grid mb-3">
@@ -46,4 +51,20 @@
         </div>
     </div>
 </div>
+<script>
+function togglePassword(inputId, btn) {
+    const input = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+    if (!input) return;
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+</script>
 {% endblock %}
