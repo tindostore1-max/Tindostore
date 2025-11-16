@@ -632,8 +632,11 @@ def login():
         
         db = get_db()
         
-        # Verificar usuarios normales en la base de datos
-        user = db.execute('SELECT * FROM usuarios WHERE username = ?', (username,)).fetchone()
+        # Verificar usuarios normales en la base de datos (por username o email)
+        user = db.execute('''
+            SELECT * FROM usuarios 
+            WHERE username = ? OR email = ?
+        ''', (username, username)).fetchone()
         
         if user and check_password_hash(user['password'], password):
             session.permanent = True  # Mantener sesión activa
@@ -677,32 +680,42 @@ def registro():
         email = request.form.get('email')
         password = request.form.get('password')
         
+        try:
+            db = get_db()
+            
+            # Verificar si el usuario ya existe
+            existing = db.execute('SELECT * FROM usuarios WHERE username = ? OR email = ?', 
+                                (username, email)).fetchone()
+            
+            if existing:
+                flash('El usuario o correo ya existe', 'danger')
+            else:
+                hashed_password = generate_password_hash(password)
+                db.execute('''
+                    INSERT INTO usuarios (username, email, password, is_admin)
+                    VALUES (?, ?, ?, 0)
+                ''', (username, email, hashed_password))
+                db.commit()
+                flash('Cuenta creada exitosamente. Ahora puedes iniciar sesión.', 'success')
+                return redirect(url_for('login'))
+        except Exception as e:
+            flash('Error al crear la cuenta. Por favor, inténtalo de nuevo.', 'danger')
+            print(f"Error en registro: {str(e)}")
+        finally:
+            if 'db' in locals():
+                db.close()
+    
+    # Obtener configuración para la plantilla
+    try:
         db = get_db()
-        
-        # Verificar si el usuario ya existe
-        existing = db.execute('SELECT * FROM usuarios WHERE username = ? OR email = ?', 
-                            (username, email)).fetchone()
-        
-        if existing:
-            flash('El usuario o correo ya existe', 'danger')
-        else:
-            hashed_password = generate_password_hash(password)
-            db.execute('''
-                INSERT INTO usuarios (username, email, password, is_admin)
-                VALUES (?, ?, ?, 0)
-            ''', (username, email, hashed_password))
-            db.commit()
-            flash('Cuenta creada exitosamente. Ahora puedes iniciar sesión.', 'success')
+        config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
+        return render_template('registro.html', config=config)
+    except Exception as e:
+        print(f"Error al cargar configuración: {str(e)}")
+        return render_template('registro.html', config=None)
+    finally:
+        if 'db' in locals():
             db.close()
-            return redirect(url_for('login'))
-        
-        db.close()
-    
-    db = get_db()
-    config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
-    db.close()
-    
-    return render_template('registro.html', config=config)
 
 @app.route('/logout')
 def logout():
