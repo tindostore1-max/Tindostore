@@ -55,11 +55,11 @@
                         <!-- Controles de cantidad solo en PC, debajo del resumen -->
                         <div class="d-none d-md-flex align-items-center justify-content-center gap-2 mt-3">
                             <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="qtyMinus"
-                                    onclick="var i=document.getElementById('cantidad'); var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); i.value=Math.max(1,parseInt(i.value||'1')-1); if(m){m.value=i.value} if(d){d.textContent=i.value} if(window.actualizarResumen){actualizarResumen()}">-</button>
-                            <input type="number" class="form-control text-center" style="max-width: 90px;" name="cantidad" id="cantidad" value="1" min="1"
-                                   oninput="this.value=this.value.replace(/[^0-9]/g,''); if(this.value==''||parseInt(this.value)<1){this.value=1}; var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); if(m){m.value=this.value}; if(d){d.textContent=this.value} if(window.actualizarResumen){actualizarResumen()}}">
+                                    onclick="var i=document.getElementById('cantidad'); var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); var f=document.getElementById('cantidad_form'); i.value=Math.max(1,parseInt(i.value||'1')-1); if(m){m.value=i.value} if(d){d.textContent=i.value} if(f){f.value=i.value} if(window.actualizarResumen){actualizarResumen()}">-</button>
+                            <input type="number" class="form-control text-center" style="max-width: 90px;" id="cantidad" value="1" min="1"
+                                   oninput="this.value=this.value.replace(/[^0-9]/g,''); if(this.value==''||parseInt(this.value)<1){this.value=1}; var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); var f=document.getElementById('cantidad_form'); if(m){m.value=this.value}; if(d){d.textContent=this.value} if(f){f.value=this.value} if(window.actualizarResumen){actualizarResumen()}}">
                             <button type="button" class="btn btn-outline-secondary btn-sm px-3" id="qtyPlus"
-                                    onclick="var i=document.getElementById('cantidad'); var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); i.value=Math.max(1,parseInt(i.value||'1')+1); if(m){m.value=i.value} if(d){d.textContent=i.value} if(window.actualizarResumen){actualizarResumen()}">+</button>
+                                    onclick="var i=document.getElementById('cantidad'); var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); var f=document.getElementById('cantidad_form'); i.value=Math.max(1,parseInt(i.value||'1')+1); if(m){m.value=i.value} if(d){d.textContent=i.value} if(f){f.value=i.value} if(window.actualizarResumen){actualizarResumen()}">+</button>
                         </div>
                     </div>
                 </div>
@@ -71,6 +71,8 @@
             <!-- Formulario de Compra -->
             <form id="purchaseForm" action="{{ url_for('checkout') }}" method="POST">
                 <input type="hidden" name="producto_id" value="{{ producto.id }}">
+                <!-- Cantidad que se envía en el formulario -->
+                <input type="hidden" name="cantidad" id="cantidad_form" value="1">
 
                 <!-- Paso 1: ID de Jugador (solo para juegos) -->
                 {% if producto.tipo == 'juego' %}
@@ -231,7 +233,7 @@
                 <!-- Botón de Compra -->
                 <div class="d-grid gap-2 mt-4">
                     <button type="submit" class="btn btn-primary btn-lg">
-                        <i class="bi bi-cart-check"></i> Continuar al Checkout
+                        <i class="bi bi-cart-check"></i> Continuar para pagar
                     </button>
                 </div>
             </form>
@@ -289,11 +291,11 @@
         <div class="mobile-box right d-flex justify-content-center align-items-center">
             <div class="qty-controls d-flex align-items-center">
                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="mQtyMinus"
-                        onclick="var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); var i=document.getElementById('cantidad'); m.value=Math.max(1,parseInt(m.value||'1')-1); d.textContent=m.value; if(i){i.value=m.value} if(window.actualizarResumen){actualizarResumen()}">-</button>
+                        onclick="var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); var i=document.getElementById('cantidad'); var f=document.getElementById('cantidad_form'); m.value=Math.max(1,parseInt(m.value||'1')-1); d.textContent=m.value; if(i){i.value=m.value} if(f){f.value=m.value} if(window.actualizarResumen){actualizarResumen()}">-</button>
                 <span class="text-white" id="mQtyDisplay" style="min-width: 18px; text-align:center;">1</span>
                 <input type="number" id="mCantidad" value="1" min="1" class="d-none">
                 <button type="button" class="btn btn-outline-secondary btn-sm px-2" id="mQtyPlus"
-                        onclick="var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); var i=document.getElementById('cantidad'); m.value=Math.max(1,parseInt(m.value||'1')+1); d.textContent=m.value; if(i){i.value=m.value} if(window.actualizarResumen){actualizarResumen()}">+</button>
+                        onclick="var m=document.getElementById('mCantidad'); var d=document.getElementById('mQtyDisplay'); var i=document.getElementById('cantidad'); var f=document.getElementById('cantidad_form'); m.value=Math.max(1,parseInt(m.value||'1')+1); d.textContent=m.value; if(i){i.value=m.value} if(f){f.value=m.value} if(window.actualizarResumen){actualizarResumen()}">+</button>
             </div>
         </div>
     </div>
