@@ -3,7 +3,7 @@
 {% block content %}
 <!-- Carrusel Principal (fuera del container para ancho completo) -->
 {% if banners %}
-<div id="mainCarousel" class="carousel slide mb-3" data-bs-ride="carousel" data-bs-interval="4000" data-bs-touch="true" data-bs-wrap="true">
+<div id="mainCarousel" class="carousel slide mb-3" data-bs-ride="carousel" data-bs-interval="4000" data-bs-touch="true" data-bs-wrap="true" data-bs-pause="false">
         <div class="carousel-indicators">
             {% for banner in banners[:3] %}
             <button type="button" data-bs-target="#mainCarousel" data-bs-slide-to="{{ loop.index0 }}" 
@@ -117,7 +117,7 @@
     <!-- Carrusel de Banners Intermedios -->
     {% if banners_intermedios %}
     <section class="mb-5">
-        <div id="bannersIntermediosCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000" data-bs-touch="true" data-bs-wrap="true">
+        <div id="bannersIntermediosCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-interval="4000" data-bs-touch="true" data-bs-wrap="true" data-bs-pause="false">
             <div class="carousel-indicators">
                 {% for banner in banners_intermedios[:3] %}
                 <button type="button" data-bs-target="#bannersIntermediosCarousel" data-bs-slide-to="{{ loop.index0 }}" 
