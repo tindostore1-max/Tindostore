@@ -579,27 +579,6 @@ def confirmar_orden():
     db.commit()
     orden_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
     
-    # Si hay afiliado, crear la comisión
-    if afiliado_id:
-        # La comisión es el mismo porcentaje que el descuento sobre el precio original
-        comision = descuento_aplicado
-        
-        db.execute('''
-            INSERT INTO comisiones_afiliados
-            (afiliado_id, orden_id, monto_orden, porcentaje_comision, monto_comision)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (afiliado_id, orden_id, precio_original, descuento_porcentaje, comision))
-        
-        # Actualizar saldo acumulado del afiliado
-        db.execute('''
-            UPDATE afiliados
-            SET saldo_acumulado = saldo_acumulado + ?
-            WHERE id = ?
-        ''', (comision, afiliado_id))
-        
-        db.commit()
-        logger.info(f"Comisión de ${comision:.2f} registrada para afiliado ID {afiliado_id}")
-    
     # Obtener datos completos de la orden para el correo
     producto = db.execute('SELECT * FROM productos WHERE id = ?', (checkout_data['producto_id'],)).fetchone()
     
@@ -1587,6 +1566,44 @@ def admin_ordenes_cambiar_estado(id, estado):
         db.execute('UPDATE ordenes SET estado = ?, codigo_giftcard = ? WHERE id = ?', (estado, codigo_giftcard, id))
     else:
         db.execute('UPDATE ordenes SET estado = ? WHERE id = ?', (estado, id))
+    
+    # Acreditar comisión SOLO cuando la orden se complete y aún no exista comisión
+    try:
+        if estado == 'completado' and orden:
+            orden_map = dict(orden)
+            if orden_map.get('afiliado_id'):
+                afiliado_id = orden_map['afiliado_id']
+            # Evitar duplicados
+            existente = db.execute('SELECT COUNT(1) AS c FROM comisiones_afiliados WHERE orden_id = ?', (id,)).fetchone()['c']
+            if existente == 0:
+                precio_original = orden_map.get('precio_original')
+                descuento_aplicado = orden_map.get('descuento_aplicado')
+                # Fallback si columnas no existen
+                if precio_original is None:
+                    cantidad = orden_map.get('cantidad') or 1
+                    precio_original = (orden_map.get('precio') or 0) * cantidad
+                if descuento_aplicado is None:
+                    # Si no hay descuento_aplicado guardado, calcular 0 por defecto
+                    descuento_aplicado = 0.0
+                porcentaje = 0.0
+                try:
+                    if precio_original and precio_original > 0:
+                        porcentaje = round((descuento_aplicado / precio_original) * 100.0, 2)
+                except Exception:
+                    porcentaje = 0.0
+                db.execute('''
+                    INSERT INTO comisiones_afiliados
+                    (afiliado_id, orden_id, monto_orden, porcentaje_comision, monto_comision)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (afiliado_id, id, float(precio_original or 0.0), float(porcentaje), float(descuento_aplicado or 0.0)))
+                # Actualizar saldo del afiliado
+                db.execute('''
+                    UPDATE afiliados
+                    SET saldo_acumulado = saldo_acumulado + ?
+                    WHERE id = ?
+                ''', (float(descuento_aplicado or 0.0), afiliado_id))
+    except Exception as e:
+        logger.error(f"Error acreditando comisión para orden {id}: {e}")
     
     db.commit()
     db.close()

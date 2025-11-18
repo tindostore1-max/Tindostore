@@ -123,6 +123,21 @@
             object-fit: cover;
             display: block;
         }
+        /* Ocultar cualquier desbordamiento de los slides fuera del viewport del carrusel */
+        .carousel-inner {
+            overflow: hidden !important;
+        }
+        /* Mantener solo overflow oculto; resto queda por defecto de Bootstrap */
+        /* Usar estilos por defecto de Bootstrap para el carrusel (sin overrides de visibilidad) */
+        /* Reforzar reglas clave del slide por si algún estilo externo las pisa */
+        .carousel .carousel-item { display: none; position: relative; transition: transform .6s ease-in-out; }
+        .carousel .carousel-item.active,
+        .carousel .carousel-item-next,
+        .carousel .carousel-item-prev { display: block; }
+        .carousel .carousel-item-next:not(.carousel-item-start),
+        .carousel .active.carousel-item-end { transform: translateX(100%); }
+        .carousel .carousel-item-prev:not(.carousel-item-end),
+        .carousel .active.carousel-item-start { transform: translateX(-100%); }
         
         #bannersIntermediosCarousel .carousel-item img {
             width: 100%;
@@ -808,22 +823,31 @@
             .carousel-item {
                 padding: 0 !important;
                 margin: 0 !important;
-                height: 150px !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
             }
             
             .carousel-inner {
                 padding: 0 !important;
                 margin: 0 !important;
-                height: 150px !important;
+            }
+            
+            /* Mejorar swipe en móvil: impedir arrastre del navegador sobre imágenes */
+            #mainCarousel img,
+            #bannersIntermediosCarousel img {
+                -webkit-user-drag: none !important;
+                user-select: none !important;
+            }
+            /* Permitir tap en enlaces y controlar gesto con touch-action en el contenedor */
+            #mainCarousel,
+            #bannersIntermediosCarousel {
+                touch-action: pan-y !important;
             }
             
             
-            /* Ocultar indicadores del carrusel en móvil */
+            /* Mostrar indicadores en móvil para depurar y facilitar navegación */
             .carousel-indicators {
-                display: none !important;
+                display: flex !important;
+                justify-content: center !important;
+                gap: 6px !important;
             }
             
             /* Mantener carrusel horizontal en móvil - AJUSTADO para mostrar 2 tarjetas por pantalla */
@@ -1349,6 +1373,19 @@
                     }
                 });
             });
+        }
+        // Inicializar carouseles explícitamente
+        try {
+            const mainEl = document.getElementById('mainCarousel');
+            if (mainEl) {
+                new bootstrap.Carousel(mainEl, { interval: 4000, ride: true, touch: true, wrap: true, pause: false });
+            }
+            const midEl = document.getElementById('bannersIntermediosCarousel');
+            if (midEl) {
+                new bootstrap.Carousel(midEl, { interval: 4000, ride: true, touch: true, wrap: true, pause: false });
+            }
+        } catch (e) {
+            console.error('Error inicializando carouseles', e);
         }
     });
     </script>
