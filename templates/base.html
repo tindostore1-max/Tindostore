@@ -829,6 +829,26 @@
                 padding: 0 !important;
                 margin: 0 !important;
             }
+
+            /* SUPERPONER SLIDES EN MÓVIL para evitar que el próximo quede debajo del actual */
+            .carousel .carousel-inner {
+                position: relative !important;
+            }
+            .carousel .carousel-item {
+                position: absolute !important;
+                top: 0; left: 0; right: 0; bottom: 0;
+                width: 100% !important;
+                will-change: transform;
+            }
+            .carousel .carousel-item.active {
+                position: relative !important;
+            }
+            /* Altura y proporción: como en PC pero más pequeño */
+            .carousel-item img {
+                height: 150px !important;
+                object-fit: contain !important;
+                background-color: transparent !important;
+            }
             
             /* Mejorar swipe en móvil: impedir arrastre del navegador sobre imágenes */
             #mainCarousel img,
