@@ -1397,13 +1397,27 @@
         // Inicializar carouseles explícitamente
         try {
             const mainEl = document.getElementById('mainCarousel');
+            let mainCarousel = null;
             if (mainEl) {
-                new bootstrap.Carousel(mainEl, { interval: 4000, ride: true, touch: true, wrap: true, pause: false });
+                mainCarousel = new bootstrap.Carousel(mainEl, { interval: 4000, ride: true, touch: true, wrap: true, pause: false });
+                // Forzar autoplay
+                setTimeout(() => mainCarousel.cycle(), 100);
+                mainEl.addEventListener('touchend', () => mainCarousel.cycle());
             }
             const midEl = document.getElementById('bannersIntermediosCarousel');
+            let midCarousel = null;
             if (midEl) {
-                new bootstrap.Carousel(midEl, { interval: 4000, ride: true, touch: true, wrap: true, pause: false });
+                midCarousel = new bootstrap.Carousel(midEl, { interval: 4000, ride: true, touch: true, wrap: true, pause: false });
+                setTimeout(() => midCarousel.cycle(), 100);
+                midEl.addEventListener('touchend', () => midCarousel.cycle());
             }
+            // Reanudar cuando la pestaña vuelve a ser visible
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    try { mainCarousel && mainCarousel.cycle(); } catch {}
+                    try { midCarousel && midCarousel.cycle(); } catch {}
+                }
+            });
         } catch (e) {
             console.error('Error inicializando carouseles', e);
         }
