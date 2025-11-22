@@ -210,6 +210,12 @@ def inicializar_sistema():
                     cursor.execute("ALTER TABLE ordenes ADD COLUMN precio_final REAL DEFAULT 0.0")
                     conn.commit()
                     logger.info("Columna 'precio_final' agregada exitosamente")
+                # Asegurar columna para códigos de gift card
+                if 'codigo_giftcard' not in columnas_ordenes:
+                    logger.warning("Agregando columna 'codigo_giftcard' a tabla ordenes...")
+                    cursor.execute("ALTER TABLE ordenes ADD COLUMN codigo_giftcard TEXT")
+                    conn.commit()
+                    logger.info("Columna 'codigo_giftcard' agregada exitosamente")
                 
                 # Migrar rutas de imágenes si es necesario
                 cursor.execute("SELECT logo FROM configuracion WHERE logo LIKE 'uploads/%' LIMIT 1")
