@@ -1537,10 +1537,19 @@ def admin_ordenes():
         LEFT JOIN usuarios u ON o.usuario_id = u.id
         ORDER BY o.fecha DESC
     ''').fetchall()
+    # Calcular referencias duplicadas
+    dups_rows = db.execute('''
+        SELECT referencia, COUNT(*) as c
+        FROM ordenes
+        WHERE referencia IS NOT NULL AND referencia != ''
+        GROUP BY referencia
+        HAVING c > 1
+    ''').fetchall()
+    referencias_duplicadas = set([row['referencia'] for row in dups_rows])
     config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
     db.close()
     
-    return render_template('admin/ordenes.html', ordenes=ordenes, config=config)
+    return render_template('admin/ordenes.html', ordenes=ordenes, config=config, referencias_duplicadas=referencias_duplicadas)
 
 @app.route('/admin/ordenes/cambiar_estado/<int:id>/<estado>', methods=['GET', 'POST'])
 @admin_required

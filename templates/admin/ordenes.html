@@ -67,6 +67,15 @@
         <div class="col-md-10">
             <h2 class="fw-bold mb-4">Gestión de Órdenes</h2>
 
+            {% if referencias_duplicadas and referencias_duplicadas|length > 0 %}
+            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div>
+                    Se detectaron referencias repetidas. Verifica las órdenes marcadas con "Referencia repetida".
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Lista de Órdenes -->
             {% if ordenes %}
             
@@ -130,7 +139,12 @@
                                         {% endif %}
                                     </td>
                                     <td class="text-capitalize">{{ orden.metodo_pago }}</td>
-                                    <td><code>{{ orden.referencia }}</code></td>
+                                    <td>
+                                        <code>{{ orden.referencia }}</code>
+                                        {% if orden.referencia and referencias_duplicadas and (orden.referencia in referencias_duplicadas) %}
+                                        <span class="badge bg-danger ms-2">Referencia repetida</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if orden.estado == 'pendiente' %}
                                         <span class="badge bg-warning">Pendiente</span>
@@ -243,7 +257,12 @@
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Referencia:</span>
-                                <span class="info-value"><code>{{ orden.referencia }}</code></span>
+                                <span class="info-value">
+                                    <code>{{ orden.referencia }}</code>
+                                    {% if orden.referencia and referencias_duplicadas and (orden.referencia in referencias_duplicadas) %}
+                                    <span class="badge bg-danger ms-1" style="vertical-align: middle;">Repetida</span>
+                                    {% endif %}
+                                </span>
                             </div>
                             <div class="info-row">
                                 <span class="info-label">Fecha:</span>
