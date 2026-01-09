@@ -81,6 +81,13 @@ else:
     
     # Configuración específica de desarrollo
     app.config['SESSION_COOKIE_SECURE'] = False
+    # Habilitar debug por defecto en desarrollo si no está definido
+    try:
+        if os.getenv('DEBUG') is None:
+            os.environ['DEBUG'] = 'True'
+            logger.info("DEBUG habilitado por defecto en desarrollo")
+    except Exception as e:
+        logger.warning(f"No se pudo habilitar DEBUG por defecto: {e}")
     
     logger.info("Entorno de DESARROLLO detectado (Local)")
 
@@ -227,7 +234,21 @@ def inicializar_sistema():
                     logger.info("Rutas de imágenes migradas")
                 else:
                     logger.info("Rutas de imágenes correctas")
-                    conn.close()
+                    # Crear índice único parcial para evitar referencias duplicadas cuando la orden está pendiente
+                    try:
+                        cursor.execute(
+                            """
+                            CREATE UNIQUE INDEX IF NOT EXISTS ux_ordenes_ref_pendiente
+                            ON ordenes( referencia COLLATE NOCASE )
+                            WHERE estado = 'pendiente' AND referencia IS NOT NULL AND TRIM(referencia) <> ''
+                            """
+                        )
+                        conn.commit()
+                        logger.info("Índice único parcial verificado/creado: ux_ordenes_ref_pendiente")
+                    except Exception as e:
+                        logger.error(f"No se pudo crear índice único parcial para referencias pendientes: {e}")
+                    finally:
+                        conn.close()
                 
     except Exception as e:
         logger.error(f"Error verificando base de datos: {e}", exc_info=True)
@@ -487,160 +508,194 @@ def checkout():
 
 @app.route('/confirmar_orden', methods=['POST'])
 def confirmar_orden():
-    if 'checkout_data' not in session:
-        flash('Sesión expirada', 'danger')
-        return redirect(url_for('index'))
-    
-    referencia = request.form.get('referencia')
-    if not referencia:
-        flash('Debe proporcionar una referencia de pago', 'danger')
-        return redirect(url_for('checkout'))
-    
-    checkout_data = session['checkout_data']
-    
-    db = get_db()
-    
-    # Verificar y agregar columnas de afiliados si no existen
     try:
-        cursor = db.execute("PRAGMA table_info(ordenes)")
-        columnas_existentes = [col[1] for col in cursor.fetchall()]
+        if 'checkout_data' not in session:
+            flash('Sesión expirada', 'danger')
+            return redirect(url_for('index'))
         
-        if 'afiliado_id' not in columnas_existentes:
-            logger.info("Agregando columnas de afiliados a tabla ordenes...")
-            db.execute("ALTER TABLE ordenes ADD COLUMN afiliado_id INTEGER")
-            db.execute("ALTER TABLE ordenes ADD COLUMN codigo_afiliado TEXT")
-            db.execute("ALTER TABLE ordenes ADD COLUMN descuento_aplicado REAL DEFAULT 0")
-            db.execute("ALTER TABLE ordenes ADD COLUMN precio_original REAL")
-            db.execute("ALTER TABLE ordenes ADD COLUMN precio_final REAL")
-            db.commit()
-            logger.info("Columnas agregadas exitosamente")
-    except Exception as e:
-        logger.error(f"Error verificando columnas: {e}")
-    
-    # Obtener datos del paquete para calcular precios
-    paquete = db.execute('SELECT * FROM paquetes WHERE id = ?', (checkout_data['paquete_id'],)).fetchone()
-    cantidad = int(checkout_data.get('cantidad', 1) or 1)
-    precio_unitario = paquete['precio']
-    precio_original = precio_unitario * cantidad
-    
-    # Verificar si hay código de afiliado
-    afiliado_id = None
-    codigo_afiliado = checkout_data.get('codigo_afiliado')
-    descuento_aplicado = 0.0
-    precio_final = precio_original
-    
-    if codigo_afiliado:
-        afiliado = db.execute('''
-            SELECT id, descuento_porcentaje 
-            FROM afiliados 
-            WHERE UPPER(codigo_afiliado) = ? AND activo = 1
-        ''', (codigo_afiliado,)).fetchone()
+        referencia = request.form.get('referencia')
+        if not referencia:
+            flash('Debe proporcionar una referencia de pago', 'danger')
+            return redirect(url_for('checkout'))
         
-        if afiliado:
-            afiliado_id = afiliado['id']
-            descuento_porcentaje = afiliado['descuento_porcentaje']
-            descuento_aplicado_unit = (precio_unitario * descuento_porcentaje) / 100
-            precio_final = (precio_unitario - descuento_aplicado_unit) * cantidad
-            descuento_aplicado = precio_original - precio_final
-            logger.info(f"Descuento aplicado: {descuento_porcentaje}% = ${descuento_aplicado:.2f}")
-    
-    # Verificar/Agregar columna cantidad si no existe
-    try:
-        cursor = db.execute("PRAGMA table_info(ordenes)")
-        columnas_existentes = [col[1] for col in cursor.fetchall()]
-        if 'cantidad' not in columnas_existentes:
-            db.execute("ALTER TABLE ordenes ADD COLUMN cantidad INTEGER DEFAULT 1")
-            db.commit()
-    except Exception as e:
-        logger.error(f"Error agregando columna cantidad: {e}")
+        checkout_data = session['checkout_data']
+        db = get_db()
+        
+        # Bloquear referencias duplicadas en órdenes en proceso (pendiente)
+        try:
+            referencia_norm = (referencia or '').strip()
+            existente = db.execute(
+                """
+                SELECT id FROM ordenes 
+                WHERE UPPER(TRIM(COALESCE(referencia, ''))) = UPPER(?) 
+                  AND estado = 'pendiente'
+                LIMIT 1
+                """,
+                (referencia_norm,)
+            ).fetchone()
+            if existente:
+                logger.warning(f"Intento de crear orden con referencia en proceso: {referencia_norm} (orden id existente: {existente['id']})")
+                flash('Esta referencia ya está siendo procesada. Por favor espera a que se complete o utiliza otra referencia.', 'danger')
+                db.close()
+                return redirect(url_for('index'))
+        except Exception as e:
+            logger.error(f"Error verificando referencia duplicada: {e}")
+        
+        # Verificar y agregar columnas de afiliados si no existen
+        try:
+            cursor = db.execute("PRAGMA table_info(ordenes)")
+            columnas_existentes = [col[1] for col in cursor.fetchall()]
+            if 'afiliado_id' not in columnas_existentes:
+                logger.info("Agregando columnas de afiliados a tabla ordenes...")
+                db.execute("ALTER TABLE ordenes ADD COLUMN afiliado_id INTEGER")
+                db.execute("ALTER TABLE ordenes ADD COLUMN codigo_afiliado TEXT")
+                db.execute("ALTER TABLE ordenes ADD COLUMN descuento_aplicado REAL DEFAULT 0")
+                db.execute("ALTER TABLE ordenes ADD COLUMN precio_original REAL")
+                db.execute("ALTER TABLE ordenes ADD COLUMN precio_final REAL")
+                db.commit()
+                logger.info("Columnas agregadas exitosamente")
+        except Exception as e:
+            logger.error(f"Error verificando columnas: {e}")
+        
+        # Obtener datos del paquete para calcular precios
+        paquete = db.execute('SELECT * FROM paquetes WHERE id = ?', (checkout_data['paquete_id'],)).fetchone()
+        cantidad = int(checkout_data.get('cantidad', 1) or 1)
+        precio_unitario = paquete['precio']
+        precio_original = precio_unitario * cantidad
+        
+        # Verificar si hay código de afiliado
+        afiliado_id = None
+        codigo_afiliado = checkout_data.get('codigo_afiliado')
+        descuento_aplicado = 0.0
+        precio_final = precio_original
+        
+        if codigo_afiliado:
+            afiliado = db.execute('''
+                SELECT id, descuento_porcentaje 
+                FROM afiliados 
+                WHERE UPPER(codigo_afiliado) = ? AND activo = 1
+            ''', (codigo_afiliado,)).fetchone()
+            if afiliado:
+                afiliado_id = afiliado['id']
+                descuento_porcentaje = afiliado['descuento_porcentaje']
+                descuento_aplicado_unit = (precio_unitario * descuento_porcentaje) / 100
+                precio_final = (precio_unitario - descuento_aplicado_unit) * cantidad
+                descuento_aplicado = precio_original - precio_final
+                logger.info(f"Descuento aplicado: {descuento_porcentaje}% = ${descuento_aplicado:.2f}")
+        
+        # Verificar/Agregar columna cantidad si no existe
+        try:
+            cursor = db.execute("PRAGMA table_info(ordenes)")
+            columnas_existentes = [col[1] for col in cursor.fetchall()]
+            if 'cantidad' not in columnas_existentes:
+                db.execute("ALTER TABLE ordenes ADD COLUMN cantidad INTEGER DEFAULT 1")
+                db.commit()
+        except Exception as e:
+            logger.error(f"Error agregando columna cantidad: {e}")
 
-    # Crear la orden
-    user_id = session.get('user_id', None)
-    
-    db.execute('''
-        INSERT INTO ordenes 
-        (usuario_id, producto_id, paquete_id, cantidad, player_id, zone_id, metodo_pago, nombre, correo, referencia, 
-         estado, afiliado_id, codigo_afiliado, descuento_aplicado, precio_original, precio_final, fecha)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (
-        user_id,
-        checkout_data['producto_id'],
-        checkout_data['paquete_id'],
-        cantidad,
-        checkout_data['player_id'],
-        checkout_data.get('zone_id', ''),
-        checkout_data['metodo_pago'],
-        checkout_data['nombre'],
-        checkout_data['correo'],
-        referencia,
-        'pendiente',
-        afiliado_id,
-        codigo_afiliado,
-        descuento_aplicado,
-        precio_original,
-        precio_final,
-        datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    ))
-    
-    db.commit()
-    orden_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-    
-    # Obtener datos completos de la orden para el correo
-    producto = db.execute('SELECT * FROM productos WHERE id = ?', (checkout_data['producto_id'],)).fetchone()
-    
-    db.close()
-    
-    # Convertir sqlite3.Row a dict
-    producto_dict = dict(producto)
-    paquete_dict = dict(paquete)
-    
-    # Preparar datos para los correos
-    orden_data = {
-        'orden_id': orden_id,
-        'fecha': datetime.now().strftime('%d/%m/%Y'),
-        'nombre': checkout_data['nombre'],
-        'correo': checkout_data['correo'],
-        'producto': producto_dict['nombre'],
-        'paquete': paquete_dict['nombre'],
-        'precio_unitario': f"{precio_unitario:.2f}",
-        'cantidad': cantidad,
-        'total': f"{precio_final:.2f}",
-        'player_id': checkout_data['player_id'],
-        'zone_id': checkout_data.get('zone_id', ''),
-        'metodo_pago': checkout_data['metodo_pago'],
-        'referencia': referencia
-    }
-    
-    # Enviar notificación al administrador
-    try:
-        admin_email = os.getenv('EMAIL_USER')
-        html_admin = email_service.generar_html_nueva_orden(orden_data)
-        email_service.enviar_correo(
-            admin_email,
-            f"🔔 Nueva Orden #{orden_id} - {producto_dict['nombre']}",
-            html_admin
-        )
-        logger.info(f"Notificación de nueva orden enviada al admin")
+        # Crear la orden
+        user_id = session.get('user_id', None)
+        try:
+            db.execute('''
+                INSERT INTO ordenes 
+                (usuario_id, producto_id, paquete_id, cantidad, player_id, zone_id, metodo_pago, nombre, correo, referencia, 
+                 estado, afiliado_id, codigo_afiliado, descuento_aplicado, precio_original, precio_final, fecha)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                user_id,
+                checkout_data['producto_id'],
+                checkout_data['paquete_id'],
+                cantidad,
+                checkout_data['player_id'],
+                checkout_data.get('zone_id', ''),
+                checkout_data['metodo_pago'],
+                checkout_data['nombre'],
+                checkout_data['correo'],
+                referencia_norm,
+                'pendiente',
+                afiliado_id,
+                codigo_afiliado,
+                descuento_aplicado,
+                precio_original,
+                precio_final,
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            ))
+            db.commit()
+        except sqlite3.IntegrityError as e:
+            logger.warning(f"Rechazando orden por referencia duplicada pendiente (índice): {referencia_norm} - {e}", exc_info=True)
+            try:
+                db.rollback()
+            except Exception:
+                pass
+            db.close()
+            flash('Esta referencia ya está siendo procesada. Por favor espera a que se complete o utiliza otra referencia.', 'danger')
+            return redirect(url_for('index'))
+
+        orden_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+        
+        # Obtener datos completos de la orden para el correo
+        producto = db.execute('SELECT * FROM productos WHERE id = ?', (checkout_data['producto_id'],)).fetchone()
+        db.close()
+        
+        # Convertir sqlite3.Row a dict
+        producto_dict = dict(producto)
+        paquete_dict = dict(paquete)
+        
+        # Preparar datos para los correos
+        orden_data = {
+            'orden_id': orden_id,
+            'fecha': datetime.now().strftime('%d/%m/%Y'),
+            'nombre': checkout_data['nombre'],
+            'correo': checkout_data['correo'],
+            'producto': producto_dict['nombre'],
+            'paquete': paquete_dict['nombre'],
+            'precio_unitario': f"{precio_unitario:.2f}",
+            'cantidad': cantidad,
+            'total': f"{precio_final:.2f}",
+            'player_id': checkout_data['player_id'],
+            'zone_id': checkout_data.get('zone_id', ''),
+            'metodo_pago': checkout_data['metodo_pago'],
+            'referencia': referencia_norm
+        }
+        
+        # Enviar notificación al administrador
+        try:
+            admin_email = os.getenv('EMAIL_USER')
+            html_admin = email_service.generar_html_nueva_orden(orden_data)
+            email_service.enviar_correo(
+                admin_email,
+                f"🔔 Nueva Orden #{orden_id} - {producto_dict['nombre']}",
+                html_admin
+            )
+            logger.info(f"Notificación de nueva orden enviada al admin")
+        except Exception as e:
+            logger.error(f"Error enviando notificación al admin: {e}")
+        
+        # Enviar confirmación al cliente
+        try:
+            html_cliente = email_service.generar_html_orden_creada(orden_data)
+            email_service.enviar_correo(
+                checkout_data['correo'],
+                f"✅ Orden #{orden_id} Recibida - Tindo Store",
+                html_cliente
+            )
+            logger.info(f"Confirmación de orden enviada al cliente: {checkout_data['correo']}")
+        except Exception as e:
+            logger.error(f"Error enviando confirmación al cliente: {e}")
+        
+        # Limpiar sesión
+        session.pop('checkout_data', None)
+        flash(f'¡Orden #{orden_id} creada exitosamente! Procesaremos tu pedido pronto.', 'success')
+        return redirect(url_for('index'))
     except Exception as e:
-        logger.error(f"Error enviando notificación al admin: {e}")
-    
-    # Enviar confirmación al cliente
-    try:
-        html_cliente = email_service.generar_html_orden_creada(orden_data)
-        email_service.enviar_correo(
-            checkout_data['correo'],
-            f"✅ Orden #{orden_id} Recibida - Tindo Store",
-            html_cliente
-        )
-        logger.info(f"Confirmación de orden enviada al cliente: {checkout_data['correo']}")
-    except Exception as e:
-        logger.error(f"Error enviando confirmación al cliente: {e}")
-    
-    # Limpiar sesión
-    session.pop('checkout_data', None)
-    
-    flash(f'¡Orden #{orden_id} creada exitosamente! Procesaremos tu pedido pronto.', 'success')
-    return redirect(url_for('index'))
+        logger.error(f"Error en confirmar_orden: {e}", exc_info=True)
+        try:
+            if 'db' in locals():
+                db.close()
+        except Exception:
+            pass
+        flash('Ocurrió un error interno al procesar tu orden. Inténtalo de nuevo.', 'danger')
+        return redirect(url_for('checkout'))
 
 # ============= AUTENTICACIÓN =============
 
@@ -1947,5 +2002,6 @@ def serve_uploads(filename):
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
-    debug = os.getenv('DEBUG', 'False').lower() == 'true'
+    # Forzar debug en entorno local (sin /data)
+    debug = not os.path.exists('/data')
     app.run(debug=debug, host='0.0.0.0', port=port)
