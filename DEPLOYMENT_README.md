@@ -19,7 +19,7 @@ Antes de desplegar, configura estas variables de entorno en Render:
 
 ### Variables Opcionales (con valores predeterminados)
 
-- `DATABASE_URL`: Ruta a la base de datos SQLite (default: /opt/render/project/src/tienda.db)
+- `DATABASE_URL`: Ruta a la base de datos SQLite (default: /data/tienda.db)
 - `FLASK_ENV`: Entorno de Flask (default: production)
 - `DEBUG`: Modo debug (default: False)
 - `MAX_CONTENT_LENGTH`: Tamaño máximo de archivos en bytes (default: 16777216)
@@ -113,12 +113,14 @@ Tindo/
 ### Base de Datos
 
 - La base de datos SQLite se creará automáticamente en el primer despliegue
+- En Render, la base de datos debe apuntar a `/data/tienda.db` o a otro directorio escribible. No uses rutas dentro de `/opt/render/project/src`.
 - Los datos se perderán si borras el servicio o cambias de plan
 - Para producción real, considera usar PostgreSQL en lugar de SQLite
 
 ### Archivos Subidos
 
-- Los archivos subidos se almacenan en el sistema de archivos efímero de Render
+- Si usas disco persistente en Render, configura `UPLOAD_FOLDER=/data/uploads`
+- No uses rutas de uploads dentro de `/opt/render/project/src`, porque el directorio del código no es escribible en runtime
 - Se perderán con cada redespliegue
 - Para producción, considera usar un servicio de almacenamiento como:
   - AWS S3

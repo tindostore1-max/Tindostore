@@ -19,6 +19,50 @@ load_dotenv()
 
 app = Flask(__name__)
 
+RENDER_CODE_ROOT = '/opt/render/project/src'
+RENDER_PERSISTENT_ROOT = '/data'
+RENDER_FALLBACK_ROOT = '/tmp/tindostore'
+
+
+def is_render_environment():
+    return any(os.getenv(var) for var in ('RENDER', 'RENDER_SERVICE_ID', 'RENDER_EXTERNAL_URL'))
+
+
+def get_runtime_storage_root():
+    if not is_render_environment():
+        return None
+
+    if os.path.isdir(RENDER_PERSISTENT_ROOT):
+        return RENDER_PERSISTENT_ROOT
+
+    return RENDER_FALLBACK_ROOT
+
+
+def resolve_runtime_path(env_var_name, local_default, render_default_name):
+    configured_path = os.getenv(env_var_name)
+
+    if not is_render_environment():
+        return configured_path or local_default
+
+    storage_root = get_runtime_storage_root()
+    if not configured_path:
+        return os.path.join(storage_root, render_default_name)
+
+    normalized_path = os.path.normpath(configured_path)
+    normalized_code_root = os.path.normpath(RENDER_CODE_ROOT)
+
+    if normalized_path == normalized_code_root or normalized_path.startswith(normalized_code_root + os.sep):
+        fallback_path = os.path.join(storage_root, os.path.basename(normalized_path))
+        logger.warning(
+            "Ruta %s=%s apunta al directorio del código en Render. Se usará %s en su lugar.",
+            env_var_name,
+            configured_path,
+            fallback_path,
+        )
+        return fallback_path
+
+    return configured_path
+
 # Configurar SECRET_KEY persistente
 def get_secret_key():
     """Obtener o generar SECRET_KEY persistente"""
@@ -28,13 +72,14 @@ def get_secret_key():
         logger.info("SECRET_KEY cargada desde variable de entorno")
         return secret_key
     
-    # Determinar la ruta del archivo secret_key según el entorno
-    if os.path.exists('/data'):
-        secret_file = '/data/.secret_key'
-    else:
-        secret_file = '.secret_key'
+    storage_root = get_runtime_storage_root()
+    secret_file = os.path.join(storage_root, '.secret_key') if storage_root else '.secret_key'
     
     try:
+        secret_dir = os.path.dirname(secret_file)
+        if secret_dir and not os.path.exists(secret_dir):
+            os.makedirs(secret_dir, exist_ok=True)
+
         if os.path.exists(secret_file):
             with open(secret_file, 'r') as f:
                 secret_key = f.read().strip()
@@ -62,33 +107,28 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=1)  # 24 horas
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
-# Detectar entorno de producción y usar ruta absoluta
-if os.path.exists('/data'):
-    # Producción en Render con disco persistente
-    app.config['UPLOAD_FOLDER'] = '/data/uploads'
-    DATABASE_URL = '/data/tienda.db'
-    
-    # Configuración específica de producción
-    # SESSION_COOKIE_SECURE = False temporalmente para debugging
-    # Cambiar a True después de verificar que funciona
+# Detectar entorno de producción y usar una ruta escribible
+if is_render_environment():
+    app.config['UPLOAD_FOLDER'] = resolve_runtime_path('UPLOAD_FOLDER', 'static/uploads', 'uploads')
+    DATABASE_URL = resolve_runtime_path('DATABASE_URL', 'tienda.db', 'tienda.db')
     app.config['SESSION_COOKIE_SECURE'] = False
-    
-    logger.info("Entorno de PRODUCCIÓN detectado (Render)")
+
+    storage_root = get_runtime_storage_root()
+    if storage_root == RENDER_PERSISTENT_ROOT:
+        logger.info("Entorno de PRODUCCION detectado (Render con disco persistente)")
+    else:
+        logger.warning("Entorno de Render detectado sin /data montado. Se usara almacenamiento temporal en /tmp.")
 else:
-    # Desarrollo local
     app.config['UPLOAD_FOLDER'] = os.getenv('UPLOAD_FOLDER', 'static/uploads')
     DATABASE_URL = os.getenv('DATABASE_URL', 'tienda.db')
-    
-    # Configuración específica de desarrollo
     app.config['SESSION_COOKIE_SECURE'] = False
-    # Habilitar debug por defecto en desarrollo si no está definido
     try:
         if os.getenv('DEBUG') is None:
             os.environ['DEBUG'] = 'True'
             logger.info("DEBUG habilitado por defecto en desarrollo")
     except Exception as e:
         logger.warning(f"No se pudo habilitar DEBUG por defecto: {e}")
-    
+
     logger.info("Entorno de DESARROLLO detectado (Local)")
 
 app.config['MAX_CONTENT_LENGTH'] = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB max

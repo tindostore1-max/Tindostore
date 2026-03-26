@@ -2,8 +2,34 @@ import sqlite3
 import os
 from werkzeug.security import generate_password_hash
 
+RENDER_CODE_ROOT = '/opt/render/project/src'
+RENDER_PERSISTENT_ROOT = '/data'
+RENDER_FALLBACK_ROOT = '/tmp/tindostore'
+
+
+def is_render_environment():
+    return any(os.getenv(var) for var in ('RENDER', 'RENDER_SERVICE_ID', 'RENDER_EXTERNAL_URL'))
+
+
+def resolve_database_path():
+    configured_path = os.getenv('DATABASE_URL')
+
+    if not is_render_environment():
+        return configured_path or 'tienda.db'
+
+    storage_root = RENDER_PERSISTENT_ROOT if os.path.isdir(RENDER_PERSISTENT_ROOT) else RENDER_FALLBACK_ROOT
+    if not configured_path:
+        return os.path.join(storage_root, 'tienda.db')
+
+    normalized_path = os.path.normpath(configured_path)
+    normalized_code_root = os.path.normpath(RENDER_CODE_ROOT)
+    if normalized_path == normalized_code_root or normalized_path.startswith(normalized_code_root + os.sep):
+        return os.path.join(storage_root, os.path.basename(normalized_path))
+
+    return configured_path
+
 def init_database():
-    db_path = os.getenv('DATABASE_URL', 'tienda.db')
+    db_path = resolve_database_path()
     print(f'\n=== INICIALIZANDO BASE DE DATOS ===')
     print(f'Ruta: {db_path}')
     

@@ -177,7 +177,7 @@ Luego ve a: `http://localhost:5000`
 ### Ubicación
 
 - **Local:** `tienda.db` (en la raíz del proyecto)
-- **Render:** `/opt/render/project/src/tienda.db`
+- **Render:** `/data/tienda.db`
 
 ### Inicialización
 
@@ -185,6 +185,7 @@ La base de datos se crea automáticamente en el primer despliegue usando `init_d
 
 ### ⚠️ Limitaciones de SQLite en Render
 
+- No debes guardar la base de datos dentro de `/opt/render/project/src` porque Render no permite escribir en el directorio del código durante la ejecución
 - Los datos se pueden perder si se reinicia el servicio
 - No es ideal para tráfico alto
 - Recomendado solo para desarrollo/pruebas
