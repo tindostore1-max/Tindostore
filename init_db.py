@@ -23,8 +23,14 @@ def resolve_database_path():
 
     normalized_path = os.path.normpath(configured_path)
     normalized_code_root = os.path.normpath(RENDER_CODE_ROOT)
+    normalized_persistent_root = os.path.normpath(RENDER_PERSISTENT_ROOT)
     if normalized_path == normalized_code_root or normalized_path.startswith(normalized_code_root + os.sep):
         return os.path.join(storage_root, os.path.basename(normalized_path))
+
+    if storage_root != RENDER_PERSISTENT_ROOT and (
+        normalized_path == normalized_persistent_root or normalized_path.startswith(normalized_persistent_root + os.sep)
+    ):
+        return os.path.join(storage_root, os.path.relpath(normalized_path, normalized_persistent_root))
 
     return configured_path
 

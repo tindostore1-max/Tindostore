@@ -51,11 +51,24 @@ def resolve_runtime_path(env_var_name, local_default, render_default_name):
 
     normalized_path = os.path.normpath(configured_path)
     normalized_code_root = os.path.normpath(RENDER_CODE_ROOT)
+    normalized_persistent_root = os.path.normpath(RENDER_PERSISTENT_ROOT)
 
     if normalized_path == normalized_code_root or normalized_path.startswith(normalized_code_root + os.sep):
         fallback_path = os.path.join(storage_root, os.path.basename(normalized_path))
         logger.warning(
             "Ruta %s=%s apunta al directorio del código en Render. Se usará %s en su lugar.",
+            env_var_name,
+            configured_path,
+            fallback_path,
+        )
+        return fallback_path
+
+    if storage_root != RENDER_PERSISTENT_ROOT and (
+        normalized_path == normalized_persistent_root or normalized_path.startswith(normalized_persistent_root + os.sep)
+    ):
+        fallback_path = os.path.join(storage_root, os.path.relpath(normalized_path, normalized_persistent_root))
+        logger.warning(
+            "Ruta %s=%s apunta a /data pero el disco persistente no está montado. Se usará %s en su lugar.",
             env_var_name,
             configured_path,
             fallback_path,
