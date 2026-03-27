@@ -339,6 +339,17 @@ def verificar_migraciones_bd(conn):
     finally:
         conn.close()
 
+
+def normalizar_nombre_sitio(conn):
+    cursor = conn.cursor()
+    cursor.execute(
+        "UPDATE configuracion SET nombre_sitio = ? WHERE nombre_sitio IN (?, ?, ?)",
+        ('Koradz', 'Tindo Store', 'Mi Tienda', 'Mi Tienda Online')
+    )
+    if cursor.rowcount > 0:
+        conn.commit()
+        logger.info("Nombre del sitio normalizado a Koradz")
+
 # Verificar y crear base de datos si no existe
 def inicializar_sistema():
     """Inicializar base de datos y directorios al arrancar el servicio"""
@@ -417,6 +428,7 @@ def get_db():
         conn = sqlite3.connect(DATABASE_URL)
         conn.row_factory = sqlite3.Row
         asegurar_columna_orden_paquetes(conn)
+        normalizar_nombre_sitio(conn)
         return conn
     except Exception as e:
         logger.error(f"Error conectando a base de datos {DATABASE_URL}: {str(e)}")
