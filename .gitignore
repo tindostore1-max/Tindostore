@@ -1,5 +1,6 @@
 # Variables de entorno
 .env
+.secret_key
 
 # Base de datos local
 *.db

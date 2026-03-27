@@ -21,7 +21,7 @@ def enviar_correo(destinatario, asunto, html_contenido):
     try:
         # Crear mensaje
         mensaje = MIMEMultipart('alternative')
-        mensaje['From'] = f"Tindo Store <{email_user}>"
+        mensaje['From'] = f"Koradz <{email_user}>"
         mensaje['To'] = destinatario
         mensaje['Subject'] = asunto
         
@@ -137,7 +137,7 @@ def generar_html_nueva_orden(orden_data):
             </div>
             <div class="content">
                 <div class="alert-box">
-                    <strong>¡Atención!</strong> Se ha recibido una nueva orden en Tindo Store.
+                    <strong>¡Atención!</strong> Se ha recibido una nueva orden en Koradz.
                 </div>
                 
                 <h2 style="color: #333; margin-top: 25px;">Detalles de la Orden</h2>
@@ -201,7 +201,7 @@ def generar_html_nueva_orden(orden_data):
                 </p>
             </div>
             <div class="footer">
-                <p>Tindo Store - Sistema de Notificaciones Automáticas</p>
+                <p>Koradz - Sistema de Notificaciones Automáticas</p>
                 <p style="font-size: 12px; color: #999;">Este es un correo automático, por favor no responder.</p>
             </div>
         </div>
@@ -359,11 +359,11 @@ def generar_html_orden_creada(orden_data):
                 
                 <p style="margin-top: 30px; color: #666;">
                     Atentamente,<br>
-                    <strong>Equipo de Tindo Store</strong>
+                    <strong>Equipo de Koradz</strong>
                 </p>
             </div>
             <div class="footer">
-                <p>Tindo Store - Tu tienda de confianza para recargas de juegos</p>
+                <p>Koradz - Tu tienda de confianza para recargas de juegos</p>
                 <p style="font-size: 12px; color: #999; margin-top: 10px;">
                     Si no realizaste esta compra, por favor contáctanos de inmediato.
                 </p>
@@ -571,7 +571,7 @@ def generar_html_orden_completada(orden_data):
                 {nota_final}
                 
                 <p style="margin-top: 20px;">
-                    ¡Gracias por confiar en Tindo Store! Esperamos verte pronto para tu próxima {'gift card' if es_giftcard else 'recarga'}.
+                    ¡Gracias por confiar en Koradz! Esperamos verte pronto para tu próxima {'gift card' if es_giftcard else 'recarga'}.
                 </p>
                 
                 <p style="margin-top: 30px; color: #666;">
@@ -580,11 +580,11 @@ def generar_html_orden_completada(orden_data):
                 
                 <p style="margin-top: 30px; color: #666;">
                     Atentamente,<br>
-                    <strong>Equipo de Tindo Store</strong>
+                    <strong>Equipo de Koradz</strong>
                 </p>
             </div>
             <div class="footer">
-                <p>Tindo Store - Tu tienda de confianza para recargas de juegos y gift cards</p>
+                <p>Koradz - Tu tienda de confianza para recargas de juegos y gift cards</p>
                 <p style="font-size: 12px; color: #999; margin-top: 10px;">
                     ¿Te gustó nuestro servicio? ¡Recomiéndanos con tus amigos!
                 </p>

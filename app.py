@@ -140,6 +140,136 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'Admin123!')
 logger.info(f"DATABASE_URL configurado en: {DATABASE_URL}")
 logger.info(f"UPLOAD_FOLDER configurado en: {app.config['UPLOAD_FOLDER']}")
 
+paquetes_orden_verificado = False
+
+
+def asegurar_columna_orden_paquetes(conn, forzar_revision=False):
+    global paquetes_orden_verificado
+
+    if paquetes_orden_verificado and not forzar_revision:
+        return
+
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA table_info(paquetes)")
+    columnas_paquetes = [row[1] for row in cursor.fetchall()]
+
+    if not columnas_paquetes:
+        logger.warning("La tabla paquetes no existe o no tiene columnas todavía")
+        paquetes_orden_verificado = False
+        return
+
+    if 'orden' not in columnas_paquetes:
+        logger.warning("Agregando columna 'orden' a tabla paquetes...")
+        try:
+            cursor.execute("ALTER TABLE paquetes ADD COLUMN orden INTEGER")
+            conn.commit()
+            logger.info("Columna 'orden' agregada exitosamente")
+        except sqlite3.OperationalError as e:
+            if 'duplicate column name' not in str(e).lower():
+                raise
+            logger.warning("La columna 'orden' ya habia sido creada por otro proceso")
+
+    cursor.execute("SELECT COUNT(*) FROM paquetes WHERE orden IS NULL")
+    paquetes_sin_orden = cursor.fetchone()[0]
+
+    if paquetes_sin_orden > 0:
+        logger.warning(f"Asignando órdenes a {paquetes_sin_orden} paquetes...")
+        productos = cursor.execute('SELECT id FROM productos').fetchall()
+        for producto in productos:
+            cursor.execute('''
+                UPDATE paquetes
+                SET orden = (
+                    SELECT COUNT(*)
+                    FROM paquetes p2
+                    WHERE p2.producto_id = paquetes.producto_id
+                    AND p2.id <= paquetes.id
+                )
+                WHERE producto_id = ? AND orden IS NULL
+            ''', (producto[0],))
+        conn.commit()
+        logger.info("Órdenes asignados exitosamente")
+
+    paquetes_orden_verificado = True
+
+
+def verificar_migraciones_bd(conn):
+    cursor = conn.cursor()
+
+    cursor.execute("PRAGMA table_info(productos)")
+    columnas = [row[1] for row in cursor.fetchall()]
+
+    if 'zone_id_required' not in columnas:
+        logger.warning("Base de datos necesita migraciones de esquema. Ejecutando...")
+        conn.close()
+        from migrar_todas_columnas import migrar_todas_columnas
+        migrar_todas_columnas()
+        logger.info("Migraciones de esquema completadas")
+        conn = sqlite3.connect(DATABASE_URL)
+        cursor = conn.cursor()
+    else:
+        logger.info("Esquema de BD verificado correctamente")
+
+    asegurar_columna_orden_paquetes(conn, forzar_revision=True)
+    cursor = conn.cursor()
+
+    cursor.execute("PRAGMA table_info(ordenes)")
+    columnas_ordenes = [row[1] for row in cursor.fetchall()]
+    if 'cantidad' not in columnas_ordenes:
+        logger.warning("Agregando columna 'cantidad' a tabla ordenes...")
+        cursor.execute("ALTER TABLE ordenes ADD COLUMN cantidad INTEGER DEFAULT 1")
+        conn.commit()
+        logger.info("Columna 'cantidad' agregada exitosamente")
+    if 'precio_original' not in columnas_ordenes:
+        logger.warning("Agregando columna 'precio_original' a tabla ordenes...")
+        cursor.execute("ALTER TABLE ordenes ADD COLUMN precio_original REAL DEFAULT 0.0")
+        conn.commit()
+        logger.info("Columna 'precio_original' agregada exitosamente")
+    if 'precio_final' not in columnas_ordenes:
+        logger.warning("Agregando columna 'precio_final' a tabla ordenes...")
+        cursor.execute("ALTER TABLE ordenes ADD COLUMN precio_final REAL DEFAULT 0.0")
+        conn.commit()
+        logger.info("Columna 'precio_final' agregada exitosamente")
+    if 'codigo_giftcard' not in columnas_ordenes:
+        logger.warning("Agregando columna 'codigo_giftcard' a tabla ordenes...")
+        cursor.execute("ALTER TABLE ordenes ADD COLUMN codigo_giftcard TEXT")
+        conn.commit()
+        logger.info("Columna 'codigo_giftcard' agregada exitosamente")
+
+    cursor.execute(
+        "UPDATE configuracion SET nombre_sitio = ? WHERE nombre_sitio IN (?, ?, ?)",
+        ('Koradz', 'Tindo Store', 'Mi Tienda', 'Mi Tienda Online')
+    )
+    if cursor.rowcount > 0:
+        conn.commit()
+        logger.info("Nombre del sitio actualizado a Koradz en la configuración")
+
+    cursor.execute("SELECT logo FROM configuracion WHERE logo LIKE 'uploads/%' LIMIT 1")
+    if cursor.fetchone():
+        logger.warning("BD tiene rutas antiguas. Migrando rutas de imágenes...")
+        conn.close()
+        from migrar_rutas_imagenes import migrar_rutas
+        migrar_rutas()
+        logger.info("Rutas de imágenes migradas")
+        conn = sqlite3.connect(DATABASE_URL)
+        cursor = conn.cursor()
+    else:
+        logger.info("Rutas de imágenes correctas")
+
+    try:
+        cursor.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS ux_ordenes_ref_pendiente
+            ON ordenes( referencia COLLATE NOCASE )
+            WHERE estado = 'pendiente' AND referencia IS NOT NULL AND TRIM(referencia) <> ''
+            """
+        )
+        conn.commit()
+        logger.info("Índice único parcial verificado/creado: ux_ordenes_ref_pendiente")
+    except Exception as e:
+        logger.error(f"No se pudo crear índice único parcial para referencias pendientes: {e}")
+    finally:
+        conn.close()
+
 # Verificar y crear base de datos si no existe
 def inicializar_sistema():
     """Inicializar base de datos y directorios al arrancar el servicio"""
@@ -184,111 +314,18 @@ def inicializar_sistema():
             logger.info("Inicializando base de datos...")
             from init_db import init_database
             init_database()
-        else:
-            # Verificar que tenga las tablas necesarias
-            conn = sqlite3.connect(DATABASE_URL)
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='configuracion'")
-            
-            if not cursor.fetchone():
-                logger.warning("Base de datos sin tablas. Inicializando...")
-                conn.close()
-                from init_db import init_database
-                init_database()
-            else:
-                # Verificar si necesita migraciones de esquema
-                cursor.execute("PRAGMA table_info(productos)")
-                columnas = [row[1] for row in cursor.fetchall()]
-                
-                if 'zone_id_required' not in columnas:
-                    logger.warning("Base de datos necesita migraciones de esquema. Ejecutando...")
-                    conn.close()
-                    from migrar_todas_columnas import migrar_todas_columnas
-                    migrar_todas_columnas()
-                    logger.info("Migraciones de esquema completadas")
-                else:
-                    logger.info("Esquema de BD verificado correctamente")
-                
-                # Verificar si tabla paquetes tiene columna orden
-                cursor.execute("PRAGMA table_info(paquetes)")
-                columnas_paquetes = [row[1] for row in cursor.fetchall()]
-                
-                if 'orden' not in columnas_paquetes:
-                    logger.warning("Agregando columna 'orden' a tabla paquetes...")
-                    cursor.execute("ALTER TABLE paquetes ADD COLUMN orden INTEGER")
-                    conn.commit()
-                    logger.info("Columna 'orden' agregada exitosamente")
-                
-                # Asignar órdenes a paquetes sin orden
-                cursor.execute("SELECT COUNT(*) FROM paquetes WHERE orden IS NULL")
-                paquetes_sin_orden = cursor.fetchone()[0]
-                
-                if paquetes_sin_orden > 0:
-                    logger.warning(f"Asignando órdenes a {paquetes_sin_orden} paquetes...")
-                    productos = cursor.execute('SELECT id FROM productos').fetchall()
-                    for producto in productos:
-                        cursor.execute('''
-                            UPDATE paquetes 
-                            SET orden = (
-                                SELECT COUNT(*) 
-                                FROM paquetes p2 
-                                WHERE p2.producto_id = paquetes.producto_id 
-                                AND p2.id <= paquetes.id
-                            ) 
-                            WHERE producto_id = ? AND orden IS NULL
-                        ''', (producto[0],))
-                    conn.commit()
-                    logger.info("Órdenes asignados exitosamente")
+        conn = sqlite3.connect(DATABASE_URL)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='configuracion'")
 
-                cursor.execute("PRAGMA table_info(ordenes)")
-                columnas_ordenes = [row[1] for row in cursor.fetchall()]
-                if 'cantidad' not in columnas_ordenes:
-                    logger.warning("Agregando columna 'cantidad' a tabla ordenes...")
-                    cursor.execute("ALTER TABLE ordenes ADD COLUMN cantidad INTEGER DEFAULT 1")
-                    conn.commit()
-                    logger.info("Columna 'cantidad' agregada exitosamente")
-                if 'precio_original' not in columnas_ordenes:
-                    logger.warning("Agregando columna 'precio_original' a tabla ordenes...")
-                    cursor.execute("ALTER TABLE ordenes ADD COLUMN precio_original REAL DEFAULT 0.0")
-                    conn.commit()
-                    logger.info("Columna 'precio_original' agregada exitosamente")
-                if 'precio_final' not in columnas_ordenes:
-                    logger.warning("Agregando columna 'precio_final' a tabla ordenes...")
-                    cursor.execute("ALTER TABLE ordenes ADD COLUMN precio_final REAL DEFAULT 0.0")
-                    conn.commit()
-                    logger.info("Columna 'precio_final' agregada exitosamente")
-                # Asegurar columna para códigos de gift card
-                if 'codigo_giftcard' not in columnas_ordenes:
-                    logger.warning("Agregando columna 'codigo_giftcard' a tabla ordenes...")
-                    cursor.execute("ALTER TABLE ordenes ADD COLUMN codigo_giftcard TEXT")
-                    conn.commit()
-                    logger.info("Columna 'codigo_giftcard' agregada exitosamente")
-                
-                # Migrar rutas de imágenes si es necesario
-                cursor.execute("SELECT logo FROM configuracion WHERE logo LIKE 'uploads/%' LIMIT 1")
-                if cursor.fetchone():
-                    logger.warning("BD tiene rutas antiguas. Migrando rutas de imágenes...")
-                    conn.close()
-                    from migrar_rutas_imagenes import migrar_rutas
-                    migrar_rutas()
-                    logger.info("Rutas de imágenes migradas")
-                else:
-                    logger.info("Rutas de imágenes correctas")
-                    # Crear índice único parcial para evitar referencias duplicadas cuando la orden está pendiente
-                    try:
-                        cursor.execute(
-                            """
-                            CREATE UNIQUE INDEX IF NOT EXISTS ux_ordenes_ref_pendiente
-                            ON ordenes( referencia COLLATE NOCASE )
-                            WHERE estado = 'pendiente' AND referencia IS NOT NULL AND TRIM(referencia) <> ''
-                            """
-                        )
-                        conn.commit()
-                        logger.info("Índice único parcial verificado/creado: ux_ordenes_ref_pendiente")
-                    except Exception as e:
-                        logger.error(f"No se pudo crear índice único parcial para referencias pendientes: {e}")
-                    finally:
-                        conn.close()
+        if not cursor.fetchone():
+            logger.warning("Base de datos sin tablas. Inicializando...")
+            conn.close()
+            from init_db import init_database
+            init_database()
+            conn = sqlite3.connect(DATABASE_URL)
+
+        verificar_migraciones_bd(conn)
                 
     except Exception as e:
         logger.error(f"Error verificando base de datos: {e}", exc_info=True)
@@ -308,6 +345,7 @@ def get_db():
     try:
         conn = sqlite3.connect(DATABASE_URL)
         conn.row_factory = sqlite3.Row
+        asegurar_columna_orden_paquetes(conn)
         return conn
     except Exception as e:
         logger.error(f"Error conectando a base de datos {DATABASE_URL}: {str(e)}")
@@ -353,7 +391,7 @@ def index():
                 db.execute('''
                     INSERT INTO configuracion (nombre_sitio, logo)
                     VALUES (?, ?)
-                ''', ('Mi Tienda Online', 'logos/default-logo.png'))
+                ''', ('Koradz', 'logos/default-logo.png'))
                 db.commit()
                 config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
         except sqlite3.OperationalError as e:
@@ -716,7 +754,7 @@ def confirmar_orden():
             html_cliente = email_service.generar_html_orden_creada(orden_data)
             email_service.enviar_correo(
                 checkout_data['correo'],
-                f"✅ Orden #{orden_id} Recibida - Tindo Store",
+                f"✅ Orden #{orden_id} Recibida - Koradz",
                 html_cliente
             )
             logger.info(f"Confirmación de orden enviada al cliente: {checkout_data['correo']}")
@@ -1748,7 +1786,7 @@ def admin_ordenes_cambiar_estado(id, estado):
             html_completada = email_service.generar_html_orden_completada(orden_data)
             email_service.enviar_correo(
                 orden_dict['correo'],
-                f"🎉 {'Gift Card Lista' if orden_dict['producto_tipo'] == 'giftcard' else 'Recarga Completada'} - Orden #{orden_dict['id']} - Tindo Store",
+                f"🎉 {'Gift Card Lista' if orden_dict['producto_tipo'] == 'giftcard' else 'Recarga Completada'} - Orden #{orden_dict['id']} - Koradz",
                 html_completada
             )
             logger.info(f"Notificación de orden completada enviada a: {orden_dict['correo']}")

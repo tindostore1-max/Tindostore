@@ -61,7 +61,7 @@ def init_database():
     c.execute('''
         CREATE TABLE IF NOT EXISTS configuracion (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre_sitio TEXT DEFAULT 'Mi Tienda',
+            nombre_sitio TEXT DEFAULT 'Koradz',
             logo TEXT DEFAULT 'uploads/logos/default-logo.png',
             tasa_cambio REAL DEFAULT 36.5,
             pagomovil_banco TEXT DEFAULT 'Banco',
@@ -115,6 +115,7 @@ def init_database():
             precio REAL NOT NULL,
             imagen TEXT DEFAULT NULL,
             zone_id_required INTEGER DEFAULT 0,
+            orden INTEGER DEFAULT 0,
             FOREIGN KEY (producto_id) REFERENCES productos (id) ON DELETE CASCADE
         )
     ''')
@@ -235,7 +236,7 @@ def init_database():
         c.execute('''
             INSERT INTO configuracion (nombre_sitio, logo)
             VALUES (?, ?)
-        ''', ('Mi Tienda Online', 'logos/default-logo.png'))
+        ''', ('Koradz', 'logos/default-logo.png'))
         print('[OK] Configuración inicial creada')
     except sqlite3.IntegrityError:
         print('[SKIP] Configuración ya existe')
