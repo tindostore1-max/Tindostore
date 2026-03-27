@@ -6,6 +6,7 @@ import sqlite3
 import os
 import logging
 import secrets
+import shutil
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import email_service
@@ -140,22 +141,14 @@ ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'Admin123!')
 logger.info(f"DATABASE_URL configurado en: {DATABASE_URL}")
 logger.info(f"UPLOAD_FOLDER configurado en: {app.config['UPLOAD_FOLDER']}")
 
-paquetes_orden_verificado = False
-
 
 def asegurar_columna_orden_paquetes(conn, forzar_revision=False):
-    global paquetes_orden_verificado
-
-    if paquetes_orden_verificado and not forzar_revision:
-        return
-
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(paquetes)")
     columnas_paquetes = [row[1] for row in cursor.fetchall()]
 
     if not columnas_paquetes:
         logger.warning("La tabla paquetes no existe o no tiene columnas todavía")
-        paquetes_orden_verificado = False
         return
 
     if 'orden' not in columnas_paquetes:
@@ -189,7 +182,22 @@ def asegurar_columna_orden_paquetes(conn, forzar_revision=False):
         conn.commit()
         logger.info("Órdenes asignados exitosamente")
 
-    paquetes_orden_verificado = True
+
+def asegurar_logo_por_defecto():
+    upload_folder = app.config['UPLOAD_FOLDER']
+
+    if not os.path.isabs(upload_folder):
+        return
+
+    origen_logo = os.path.join('static', 'uploads', 'logos', 'default-logo.png')
+    destino_logo = os.path.join(upload_folder, 'logos', 'default-logo.png')
+
+    if not os.path.exists(origen_logo) or os.path.exists(destino_logo):
+        return
+
+    os.makedirs(os.path.dirname(destino_logo), exist_ok=True)
+    shutil.copy2(origen_logo, destino_logo)
+    logger.info(f"Logo por defecto copiado a almacenamiento runtime: {destino_logo}")
 
 
 def verificar_migraciones_bd(conn):
@@ -294,6 +302,8 @@ def inicializar_sistema():
                 os.makedirs(directorio, exist_ok=True)
             else:
                 logger.info(f"Directorio existe: {directorio}")
+
+        asegurar_logo_por_defecto()
     except Exception as e:
         logger.error(f"Error creando directorios: {e}")
         raise
@@ -2073,10 +2083,14 @@ def serve_uploads(filename):
     
     # Si UPLOAD_FOLDER es absoluto (como /data/uploads), usar esa ruta
     if os.path.isabs(upload_folder):
-        return send_from_directory(upload_folder, filename)
+        ruta_runtime = os.path.join(upload_folder, filename)
+        if os.path.exists(ruta_runtime):
+            return send_from_directory(upload_folder, filename)
+
+        logger.warning(f"Archivo no encontrado en runtime uploads: {ruta_runtime}. Se intentará static/uploads")
+
     # Si es relativo, usar static/uploads
-    else:
-        return send_from_directory('static/uploads', filename)
+    return send_from_directory('static/uploads', filename)
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
