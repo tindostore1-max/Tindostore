@@ -183,6 +183,54 @@ def asegurar_columna_orden_paquetes(conn, forzar_revision=False):
         logger.info("Órdenes asignados exitosamente")
 
 
+def paquetes_tienen_orden(conn):
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA table_info(paquetes)")
+    return 'orden' in [row[1] for row in cursor.fetchall()]
+
+
+def obtener_paquetes_producto(conn, producto_id):
+    if paquetes_tienen_orden(conn):
+        return conn.execute(
+            'SELECT * FROM paquetes WHERE producto_id = ? ORDER BY COALESCE(orden, 999), precio',
+            (producto_id,)
+        ).fetchall()
+
+    logger.warning("La tabla paquetes no tiene columna 'orden'. Se ordenará solo por precio")
+    return conn.execute(
+        'SELECT * FROM paquetes WHERE producto_id = ? ORDER BY precio, id',
+        (producto_id,)
+    ).fetchall()
+
+
+def obtener_siguiente_orden_paquete(conn, producto_id):
+    if not paquetes_tienen_orden(conn):
+        return None
+
+    max_orden = conn.execute(
+        'SELECT MAX(COALESCE(orden, 0)) as max_orden FROM paquetes WHERE producto_id = ?',
+        (producto_id,)
+    ).fetchone()
+    return (max_orden['max_orden'] or 0) + 1
+
+
+def crear_paquete(conn, producto_id, nombre, descripcion, precio, imagen_ruta, zone_id_required):
+    nuevo_orden = obtener_siguiente_orden_paquete(conn, producto_id)
+
+    if nuevo_orden is None:
+        logger.warning("Creando paquete sin columna 'orden' disponible")
+        conn.execute('''
+            INSERT INTO paquetes (producto_id, nombre, descripcion, precio, imagen, zone_id_required)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (producto_id, nombre, descripcion, precio, imagen_ruta, zone_id_required))
+        return
+
+    conn.execute('''
+        INSERT INTO paquetes (producto_id, nombre, descripcion, precio, imagen, zone_id_required, orden)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''', (producto_id, nombre, descripcion, precio, imagen_ruta, zone_id_required, nuevo_orden))
+
+
 def asegurar_logo_por_defecto():
     upload_folder = app.config['UPLOAD_FOLDER']
 
@@ -466,7 +514,7 @@ def producto_detalle(id):
         return redirect(url_for('index'))
     
     # Obtener paquetes del producto ordenados por campo orden
-    paquetes = db.execute('SELECT * FROM paquetes WHERE producto_id = ? ORDER BY COALESCE(orden, 999), precio', (id,)).fetchall()
+    paquetes = obtener_paquetes_producto(db, id)
     
     # Obtener productos relacionados (mismo tipo, excluyendo el actual, máximo 4)
     productos_relacionados = db.execute('''
@@ -1181,7 +1229,7 @@ def admin_productos_eliminar(id):
 def admin_paquetes(producto_id):
     db = get_db()
     producto = db.execute('SELECT * FROM productos WHERE id = ?', (producto_id,)).fetchone()
-    paquetes = db.execute('SELECT * FROM paquetes WHERE producto_id = ? ORDER BY COALESCE(orden, 999), precio', (producto_id,)).fetchall()
+    paquetes = obtener_paquetes_producto(db, producto_id)
     config = db.execute('SELECT * FROM configuracion WHERE id = 1').fetchone()
     db.close()
     
@@ -1199,14 +1247,7 @@ def admin_paquetes_crear(producto_id):
     imagen_ruta = request.form.get('imagen_ruta', None)
     zone_id_required = 1 if request.form.get('zone_id_required') else 0
     
-    # Obtener el siguiente orden disponible
-    max_orden = db.execute('SELECT MAX(COALESCE(orden, 0)) as max_orden FROM paquetes WHERE producto_id = ?', (producto_id,)).fetchone()
-    nuevo_orden = (max_orden['max_orden'] or 0) + 1
-    
-    db.execute('''
-        INSERT INTO paquetes (producto_id, nombre, descripcion, precio, imagen, zone_id_required, orden)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''', (producto_id, nombre, descripcion, precio, imagen_ruta, zone_id_required, nuevo_orden))
+    crear_paquete(db, producto_id, nombre, descripcion, precio, imagen_ruta, zone_id_required)
     
     db.commit()
     db.close()
@@ -1276,6 +1317,11 @@ def admin_paquetes_eliminar(id, producto_id):
 def admin_paquetes_mover(id, producto_id, direccion):
     """Mover paquete arriba o abajo en el orden"""
     db = get_db()
+
+    if not paquetes_tienen_orden(db):
+        db.close()
+        flash('La base de datos aún no tiene la columna de orden. Corrige el almacenamiento de Render y vuelve a intentar.', 'warning')
+        return redirect(url_for('admin_paquetes', producto_id=producto_id))
     
     # Obtener el paquete actual
     paquete_actual = db.execute('SELECT * FROM paquetes WHERE id = ?', (id,)).fetchone()
